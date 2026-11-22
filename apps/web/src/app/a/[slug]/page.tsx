@@ -47,7 +47,7 @@ export default async function SharedAgentPage({ params }: PageProps<"/a/[slug]">
             {c.company.name ? `${c.company.name} için demo. ` : "Demo agent. "}
             {c.role.length > 220 ? c.role.slice(0, 220) + "…" : c.role}
           </p>
-          <p className="text-[13px] text-graphite">Bu bir test ortamıdır. Gerçek kişisel bilgi, kart veya şifre paylaşmayın.</p>
+          <p className="text-[13px] text-graphite">Bu bir sesli demo. Mikrofona konuşarak deneyin; gerçek kişisel bilgi, kart veya şifre söylemeyin.</p>
         </div>
       </section>
       <Workbench agent={pub} initialConfig={c} mode="shared" />

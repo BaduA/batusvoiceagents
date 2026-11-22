@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS sessions (
   ip_hash text NOT NULL,
   sim_state jsonb NOT NULL DEFAULT '{}'::jsonb
 );
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS turn_metrics jsonb NOT NULL DEFAULT '[]'::jsonb;
+ALTER TABLE sessions ADD COLUMN IF NOT EXISTS usage jsonb NOT NULL DEFAULT '{}'::jsonb;
 CREATE INDEX IF NOT EXISTS sessions_agent_idx ON sessions(agent_id);
 CREATE INDEX IF NOT EXISTS sessions_started_idx ON sessions(started_at);
 CREATE TABLE IF NOT EXISTS messages (

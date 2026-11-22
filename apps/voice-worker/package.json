@@ -1,0 +1,32 @@
+{
+  "name": "voice-worker",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx src/main.ts dev",
+    "start": "tsx src/main.ts start",
+    "download-files": "tsx src/main.ts download-files",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@livekit/agents": "1.10.1",
+    "@livekit/agents-plugin-anthropic": "1.10.1",
+    "@livekit/agents-plugin-cartesia": "1.10.1",
+    "@livekit/agents-plugin-deepgram": "1.10.1",
+    "@livekit/agents-plugin-elevenlabs": "1.10.1",
+    "@livekit/agents-plugin-google": "1.10.1",
+    "@livekit/agents-plugin-livekit": "1.10.1",
+    "@livekit/agents-plugin-openai": "1.10.1",
+    "@livekit/agents-plugin-silero": "1.10.1",
+    "@livekit/rtc-node": "^1.2.3",
+    "@vap/core": "workspace:*",
+    "dotenv": "^18.0.10",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

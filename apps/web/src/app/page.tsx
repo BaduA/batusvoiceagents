@@ -25,7 +25,7 @@ export default async function Home() {
       <main className="mx-auto w-full max-w-5xl flex-1 px-5 pb-20 pt-12">
         <h1 className="max-w-[22ch] text-[40px] font-bold leading-[1.1] tracking-[-0.02em] sm:text-[52px]">Herhangi bir şirketin agent'ını kur, konuş, ölç.</h1>
         <p className="mt-4 max-w-[60ch] text-[18px] leading-7 text-graphite">
-          Görevi ve kişiliği tanımla, modelleri seç, yazarak test et. Her cevabın ne kadar sürede geldiğini, neye mal olduğunu ve agent'ın hangi işlemi tetiklediğini gör. Sonra linki gönder.
+          Görevi ve kişiliği tanımla, ses modellerini seç, mikrofona konuşarak test et. Her cevabın kaç milisaniyede geldiğini, neye mal olduğunu ve agent'ın hangi işlemi tetiklediğini gör. Sonra linki gönder.
         </p>
 
         <section className="mt-12" aria-labelledby="templates">

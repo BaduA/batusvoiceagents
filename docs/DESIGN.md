@@ -2,7 +2,7 @@
 
 **Subject:** a test bench where a freelancer defines a text/voice agent for a prospective client, tries it with different models, and sends the client a link.
 **Audience:** (1) the builder — technical, wants control and numbers; (2) the client opening a shared link — non-technical, wants to talk to "their" agent and see that it works.
-**Primary job:** define → talk → see what happened (latency, cost, the requests the agent would have sent).
+**Primary job:** define → talk (voice only, no text input) → see what happened (latency, cost, the requests the agent would have sent). The conversation pane shows only the live transcript.
 
 ## Tokens
 
@@ -30,7 +30,7 @@ Workbench (`/agents/new`, `/agents/:id`):
 | [Task][Persona]  |  agent turn                   |  11:42 POST ...   |
 | [Knowledge]...   |  ▕▇▇▇▇▇░░░░░░▏ 820 ms         |  { json }         |
 |                  |  user turn                    |-------------------|
-| [Save and test]  |  [ composer ............ (mic)]| Metrics           |
+| [Save and test]  |  [● Dinliyor 2:41  Bitir]     | Metrics           |
 +------------------+-------------------------------+-------------------+
 ```
 
@@ -42,10 +42,10 @@ Shared link (`/a/:slug`): conversation first; a short "what this agent does" sum
 
 ## Principles
 
-1. **The memorable thing is the latency strip** under every agent turn: a thin bar split by layer (STT · LLM first token · TTS) drawn to scale, with the number. Everything else stays quiet.
+1. **The memorable thing is the latency strip** under every agent turn: a thin bar split by layer (end of speech · LLM first token · TTS first audio) drawn to scale, with the number. Everything else stays quiet.
 2. The request log looks like a machine wrote it — dark console, mono, status dot — because it represents a backend call that did not happen.
 3. Structure means something: numbers only on real sequences, borders only between distinct zones.
-4. Motion only answers the user: the needle pulse while listening, a log row sliding in when an action fires.
+4. Motion only answers the user: the needle dot pulses while the agent speaks, a log row slides in when an action fires.
 
 ## Review against generic defaults
 

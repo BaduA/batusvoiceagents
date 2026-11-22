@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { buildPersonaPrompt, buildSystemPrompt, agentConfigSchema, type AgentConfig } from "@vap/core";
 import type { ProviderAvailability } from "@/lib/providers";
+import { ModelPicker } from "./ModelPicker";
 
 type Tab = "task" | "persona" | "knowledge" | "actions" | "models" | "advanced";
 
@@ -115,7 +116,7 @@ export function DefinitionPanel({
             <Field label="Üslup notları" htmlFor="style">
               <textarea id="style" rows={4} className="field" value={config.persona.style_notes} onChange={(e) => set((d) => void (d.persona.style_notes = e.target.value))} />
             </Field>
-            <Field label="Cevap uzunluğu" htmlFor="maxs" hint="Sesli görüşmede kısa cevaplar daha doğal duyulur.">
+            <Field label="Cevap uzunluğu" htmlFor="maxs" hint="Kısa cevaplar seste daha doğal duyulur ve gecikmeyi azaltır.">
               <div className="flex items-center gap-3">
                 <input
                   id="maxs"
@@ -179,7 +180,7 @@ function ActionsPreview({ config }: { config: AgentConfig }) {
   return (
     <div className="space-y-4">
       <p className="rounded-[var(--radius-field)] border border-needle/50 bg-needle-soft/60 px-3 py-2 text-[14px] leading-6">
-        İşlem düzenleyici ve simülatör sonraki fazda geliyor. Şimdilik şablondaki işlem tanımları kaydedilir ama agent bunları çağırmaz.
+        İşlem düzenleyici ve simülatör sonraki adımda geliyor. Şimdilik şablondaki işlem tanımları kaydedilir ama agent görüşmede bunları çağırmaz.
       </p>
       {config.actions.length === 0 && <p className="text-[14px] text-graphite">Bu agent için tanımlı işlem yok.</p>}
       <ul className="divide-y divide-rule rounded-[var(--radius-panel)] border border-rule bg-white">
@@ -205,58 +206,16 @@ function ActionsPreview({ config }: { config: AgentConfig }) {
 function ModelsTab({ config, set, providers }: { config: AgentConfig; set: (fn: (d: AgentConfig) => void) => void; providers: ProviderAvailability | null }) {
   if (!providers) return <p className="text-[14px] text-graphite">Sağlayıcılar yükleniyor…</p>;
   return (
-    <div className="space-y-6">
-      <fieldset>
-        <legend className="label">Dil modeli (LLM)</legend>
-        <div className="divide-y divide-rule rounded-[var(--radius-panel)] border border-rule bg-white">
-          {providers.llm.map((m) => (
-            <label key={m.id} className={`flex cursor-pointer items-center gap-3 px-3 py-2.5 ${m.available ? "" : "cursor-not-allowed opacity-55"}`}>
-              <input
-                type="radio"
-                name="llm"
-                disabled={!m.available}
-                checked={config.providers.llm === m.id}
-                onChange={() => set((d) => void (d.providers.llm = m.id))}
-                className="accent-[var(--ink)]"
-              />
-              <span className="flex-1">
-                <span className="block text-[15px] font-medium">{m.label}</span>
-                <span className="block text-[12px] text-graphite">
-                  ${m.inputPerM} / ${m.outputPerM} (1M token girdi / çıktı){m.tier === "premium" ? ", büyük model: günlük limit daha sıkı" : ""}
-                </span>
-              </span>
-              {!m.available && <span className="text-[12px] text-graphite">anahtar yok</span>}
-            </label>
-          ))}
-        </div>
-        {providers.mock && <p className="hint">Geliştirme modu: tüm LLM çağrıları mock modele gider.</p>}
-      </fieldset>
-
-      <fieldset disabled className="opacity-60">
-        <legend className="label">Ses (sesli mod geldiğinde açılacak)</legend>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <div>
-            <span className="hint mb-1 block">Konuşmayı yazıya çevirme (STT)</span>
-            <select className="field" value={config.providers.stt} onChange={() => {}}>
-              {providers.stt.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <span className="hint mb-1 block">Seslendirme (TTS)</span>
-            <select className="field" value={config.providers.tts} onChange={() => {}}>
-              {providers.tts.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.label}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </fieldset>
+    <div className="space-y-4">
+      {!providers.voice && (
+        <p className="rounded-[var(--radius-field)] border border-needle/50 bg-needle-soft/60 px-3 py-2 text-[14px] leading-6">
+          Sesli mod için sunucuda LiveKit ayarları eksik. Modeller seçilebilir ama görüşme başlatılamaz.
+        </p>
+      )}
+      <ModelPicker idPrefix="def" value={config.providers} providers={providers} onChange={(v) => set((d) => void (d.providers = v))} />
+      <p className="hint">
+        Pipeline modunda her katmanı ayrı seçersiniz ve gecikme katman katman ölçülür. Realtime modunda tek model hem dinler hem konuşur; genelde daha hızlıdır, kontrol daha azdır.
+      </p>
     </div>
   );
 }

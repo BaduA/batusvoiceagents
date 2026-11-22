@@ -53,7 +53,7 @@ export function buildPersonaPrompt(config: AgentConfig): string {
       `Ton: ${config.persona.tone}.`,
       config.persona.style_notes && config.persona.style_notes,
       `Varsayılan dil: ${lang}. Kullanıcı başka bir dilde konuşursa onun dilinde cevap ver.`,
-      `Cevapların en fazla ${config.limits.max_reply_sentences} cümle olsun. Konuşma dilinde yaz: madde işareti, başlık, emoji veya markdown kullanma; bu metin sese de çevrilebilir.`,
+      `Bu bir sesli görüşme: söylediğin her şey seslendirilir. Cevapların en fazla ${config.limits.max_reply_sentences} cümle olsun. Madde işareti, başlık, emoji, markdown veya URL kullanma. Rakamları, saatleri ve tarihleri konuşur gibi söyle.`,
       `Bilmediğin bir şeyi uydurma. Bilgi metninde olmayan bir şey sorulursa bilmediğini söyle ve yardımcı olabileceğin şeye yönlendir.`,
     ]
       .filter(Boolean)

@@ -4,6 +4,8 @@
   "packageManager": "pnpm@10.28.0",
   "scripts": {
     "dev": "pnpm --filter web dev",
+    "dev:worker": "pnpm --filter voice-worker dev",
+    "worker:download-files": "pnpm --filter voice-worker download-files",
     "build": "pnpm --filter web build",
     "test": "pnpm -r --if-present test",
     "typecheck": "pnpm -r --if-present typecheck"

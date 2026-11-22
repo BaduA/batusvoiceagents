@@ -42,7 +42,7 @@ export type AgentAction = z.infer<typeof actionSchema>;
 export const pipelineProvidersSchema = z.object({
   mode: z.enum(["pipeline", "realtime"]).default("pipeline"),
   stt: z.string().default("deepgram:nova-3"),
-  llm: z.string().default("anthropic:claude-haiku-5-5"),
+  llm: z.string().default("openai:gpt-5.4-mini"),
   tts: z.string().default("cartesia:sonic-3"),
   voice: z.string().default(""),
   realtime: z.string().default("openai:gpt-realtime-2.1-mini"),

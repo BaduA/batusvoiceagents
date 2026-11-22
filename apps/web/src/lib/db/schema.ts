@@ -1,5 +1,5 @@
 import { boolean, integer, jsonb, numeric, pgTable, primaryKey, text, timestamp } from "drizzle-orm/pg-core";
-import type { AgentConfig } from "@vap/core";
+import type { AgentConfig, VoiceUsage } from "@vap/core";
 
 export const agents = pgTable("agents", {
   id: text("id").primaryKey(),
@@ -28,7 +28,21 @@ export const sessions = pgTable("sessions", {
   estCostUsd: numeric("est_cost_usd", { precision: 10, scale: 6 }).notNull().default("0"),
   ipHash: text("ip_hash").notNull(),
   simState: jsonb("sim_state").$type<Record<string, unknown>>().notNull().default({}),
+  turnMetrics: jsonb("turn_metrics").$type<TurnMetrics[]>().notNull().default([]),
+  usage: jsonb("usage").$type<VoiceUsage>().notNull().default({}),
 });
+
+/** One agent turn, measured by the voice worker. All values in ms. */
+export type TurnMetrics = {
+  at: number;
+  /** user stopped speaking → turn committed (includes STT finalisation) */
+  eou?: number;
+  stt?: number;
+  llm_first_token?: number;
+  tts_first_audio?: number;
+  /** end of user speech → first agent audio */
+  first_audio?: number;
+};
 
 export type LatencyMs = { stt?: number; llm_first_token?: number; tts_first_audio?: number; total?: number };
 

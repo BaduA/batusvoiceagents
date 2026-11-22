@@ -7,7 +7,7 @@ const code = IBM_Plex_Mono({ variable: "--font-code", subsets: ["latin", "latin-
 
 export const metadata: Metadata = {
   title: "Voice Agent Playground",
-  description: "Bir görevi tanımla, modelleri seç, yazarak veya konuşarak test et.",
+  description: "Bir görevi tanımla, ses modellerini seç, konuşarak test et.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

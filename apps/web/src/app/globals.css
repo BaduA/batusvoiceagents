@@ -1,0 +1,94 @@
+@import "tailwindcss";
+
+:root {
+  --desk: #e7ecf0;
+  --sheet: #fafbfc;
+  --ink: #1d2935;
+  --graphite: #5b6875;
+  --rule: #cfd7de;
+  --needle: #f0a020;
+  --needle-soft: #fbe6bd;
+  --console: #1f2b37;
+  --console-line: #2e3c4a;
+  --console-text: #d8e0e7;
+  --pass: #13795b;
+  --fault: #c23b2e;
+  --fault-soft: #f8e1de;
+  color-scheme: light;
+}
+
+@theme inline {
+  --color-desk: var(--desk);
+  --color-sheet: var(--sheet);
+  --color-ink: var(--ink);
+  --color-graphite: var(--graphite);
+  --color-rule: var(--rule);
+  --color-needle: var(--needle);
+  --color-needle-soft: var(--needle-soft);
+  --color-console: var(--console);
+  --color-console-line: var(--console-line);
+  --color-console-text: var(--console-text);
+  --color-pass: var(--pass);
+  --color-fault: var(--fault);
+  --color-fault-soft: var(--fault-soft);
+  --font-sans: var(--font-ui);
+  --font-mono: var(--font-code);
+  --radius-field: 6px;
+  --radius-panel: 10px;
+}
+
+html,
+body {
+  background: var(--desk);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--font-ui), system-ui, sans-serif;
+}
+
+@layer base {
+  :focus-visible {
+    outline: 2px solid var(--ink);
+    outline-offset: 2px;
+  }
+}
+
+@utility field {
+  @apply w-full rounded-[var(--radius-field)] border border-rule bg-white px-3 py-2 text-[15px] leading-6 text-ink placeholder:text-graphite/70;
+  &:focus {
+    @apply border-ink outline-none;
+  }
+}
+@utility label {
+  @apply mb-1.5 block text-[13px] font-medium text-ink;
+}
+@utility hint {
+  @apply mt-1 text-[13px] leading-5 text-graphite;
+}
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-[var(--radius-field)] px-4 py-2 text-[15px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-50;
+}
+@utility btn-primary {
+  @apply btn bg-needle text-ink hover:bg-[#e2940f];
+}
+@utility btn-quiet {
+  @apply btn border border-rule bg-sheet text-ink hover:border-ink;
+}
+@utility btn-text {
+  @apply btn px-2 text-graphite hover:text-ink;
+}
+
+@keyframes needle-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgb(240 160 32 / 0.55); }
+  50% { box-shadow: 0 0 0 10px rgb(240 160 32 / 0); }
+}
+
+@keyframes row-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

@@ -117,15 +117,15 @@ export function VoicePickerSheet({
         aria-modal="true"
         aria-labelledby="voice-title"
         onClick={(e) => e.stopPropagation()}
-        className="flex max-h-[85dvh] w-full max-w-[30rem] flex-col overflow-hidden rounded-t-[16px] bg-window shadow-window sm:rounded-[14px]"
+        className="flex max-h-[85dvh] w-full max-w-[30rem] flex-col overflow-hidden rounded-t-[16px] bg-bg shadow-pop sm:rounded-[14px]"
         style={{ animation: "rise 200ms ease-out" }}
       >
-        <header className="flex items-center gap-3 border-b border-separator bg-surface px-4 py-3">
+        <header className="flex items-center gap-3 border-b border-line bg-surface px-4 py-3">
           <div className="min-w-0 flex-1">
-            <h2 id="voice-title" className="stamp text-[17px] lowercase">
-              ses seç
+            <h2 id="voice-title" className="text-[17px] font-bold">
+              Ses seç
             </h2>
-            <p className="truncate text-[12px] text-secondary">
+            <p className="truncate text-[12px] text-ink-2">
               {ttsLabel}
               {data ? `, ${data.voices.length} ses` : ""}
             </p>
@@ -135,7 +135,7 @@ export function VoicePickerSheet({
           </button>
         </header>
 
-        <div className="space-y-2 border-b border-separator bg-surface px-4 pb-3 pt-2">
+        <div className="space-y-2 border-b border-line bg-surface px-4 pb-3 pt-2">
           <input className="field text-[14px]" placeholder="Ara: isim, aksan, cinsiyet…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Seslerde ara" autoFocus />
           {hasLangInfo && (
             <label className="flex items-center justify-between text-[13px]">
@@ -146,9 +146,9 @@ export function VoicePickerSheet({
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
-          {error && <p className="mb-2 rounded-[10px] bg-end-soft px-3 py-2 text-left text-[13px] text-end">{error}</p>}
-          {!data && !error && <p className="px-2 py-6 text-center text-[14px] text-secondary">Sesler yükleniyor…</p>}
-          {data && list.length === 0 && <p className="px-2 py-6 text-center text-[14px] text-secondary">Eşleşen ses yok.</p>}
+          {error && <p className="mb-2 rounded-[10px] bg-danger-soft px-3 py-2 text-left text-[13px] text-danger">{error}</p>}
+          {!data && !error && <p className="px-2 py-6 text-center text-[14px] text-ink-2">Sesler yükleniyor…</p>}
+          {data && list.length === 0 && <p className="px-2 py-6 text-center text-[14px] text-ink-2">Eşleşen ses yok.</p>}
           {list.length > 0 && (
             <ul className="group-list">
               {list.map((v) => (
@@ -157,7 +157,7 @@ export function VoicePickerSheet({
                     type="button"
                     onClick={() => play(v)}
                     aria-label={playing === v.id ? `${v.label} durdur` : `${v.label} dinle`}
-                    className="grid size-8 shrink-0 place-items-center rounded-full bg-fill text-label hover:bg-fill-strong"
+                    className="grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 text-ink hover:bg-line"
                   >
                     {loadingId === v.id ? (
                       <span className="size-3 animate-spin rounded-full border-2 border-tertiary border-t-label" />
@@ -174,10 +174,10 @@ export function VoicePickerSheet({
                   </button>
                   <button type="button" className="min-w-0 flex-1 text-left" onClick={() => onPick(v.id, v.label)}>
                     <span className="block truncate text-[15px]">{v.label}</span>
-                    {meta(v) && <span className="block truncate text-[12px] text-secondary">{meta(v)}</span>}
+                    {meta(v) && <span className="block truncate text-[12px] text-ink-2">{meta(v)}</span>}
                   </button>
                   {value === v.id && (
-                    <svg width="16" height="16" viewBox="0 0 16 16" className="shrink-0 text-needle-ink" aria-label="Seçili">
+                    <svg width="16" height="16" viewBox="0 0 16 16" className="shrink-0 text-link" aria-label="Seçili">
                       <path d="m3.5 8.5 3 3 6-7" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   )}
@@ -189,7 +189,7 @@ export function VoicePickerSheet({
         </div>
 
         <form
-          className="flex items-center gap-2 border-t border-separator bg-surface px-4 py-3"
+          className="flex items-center gap-2 border-t border-line bg-surface px-4 py-3"
           onSubmit={(e) => {
             e.preventDefault();
             const id = customId.trim();

@@ -1,27 +1,24 @@
 import Link from "next/link";
 
-/** Brand mark: a speaker grille with the signal dot, as if milled into the chassis. */
-export function AppMark({ size = 22 }: { size?: number }) {
-  const dots = [];
-  for (let y = 0; y < 4; y++) for (let x = 0; x < 4; x++) if (!(x === 3 && y === 0)) dots.push(<circle key={`${x}${y}`} cx={4 + x * 5.3} cy={4 + y * 5.3} r={1.5} fill="currentColor" />);
+/** Small brand mark: a single dot in the primary colour (Agent Starter style). */
+export function AppMark({ size = 28 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" aria-hidden className="shrink-0 text-engrave">
-      {dots}
-      <circle cx={19.9} cy={4} r={2.4} fill="var(--signal)" />
-    </svg>
+    <span className="inline-grid shrink-0 place-items-center rounded-full bg-primary/10" style={{ width: size, height: size }} aria-hidden>
+      <span className="rounded-full bg-primary" style={{ width: size * 0.36, height: size * 0.36 }} />
+    </span>
   );
 }
 
-/** Chassis header strip for simple pages (admin, closed links). */
 export function SiteHeader({ title, children }: { title?: React.ReactNode; children?: React.ReactNode }) {
   return (
-    <header className="flex h-14 items-center gap-3 px-4 sm:px-6">
-      <Link href="/" className="flex items-center gap-2.5">
-        <AppMark />
-        <span className="stamp hidden text-[14px] lowercase sm:inline">voice agent playground</span>
+    <header className="flex h-14 shrink-0 items-center gap-3 border-b border-border px-4 sm:px-6">
+      <Link href="/" lang="en" className="flex items-center gap-2 font-mono text-[11px] font-bold tracking-wider uppercase">
+        <span className="size-2.5 rounded-full bg-primary" aria-hidden />
+        Voice Agent Playground
       </Link>
-      {title && <span className="truncate text-[14px] lowercase text-faint">{title}</span>}
-      <div className="ml-auto flex items-center gap-2">{children}</div>
+      {title && <span className="truncate font-mono text-[11px] tracking-wider text-muted-foreground uppercase">/ {title}</span>}
+      <span className="flex-1" />
+      {children}
     </header>
   );
 }

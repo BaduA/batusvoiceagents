@@ -8,7 +8,7 @@ export function ReportButton({ agentId }: { agentId: string }) {
   const [reason, setReason] = useState("");
   return (
     <>
-      <button className="btn-text" onClick={() => setState("open")} disabled={state === "sent"}>
+      <button className="btn-text text-xs" onClick={() => setState("open")} disabled={state === "sent"}>
         {state === "sent" ? "Bildirildi" : "Bildir"}
       </button>
       {state === "open" && (
@@ -18,7 +18,7 @@ export function ReportButton({ agentId }: { agentId: string }) {
             aria-modal="true"
             aria-labelledby="report-title"
             onClick={(e) => e.stopPropagation()}
-            className="w-full max-w-[22rem] rounded-[14px] bg-surface p-5 text-center shadow-window"
+            className="w-full max-w-[22rem] rounded-[14px] bg-surface p-5 text-center shadow-pop"
             style={{ animation: "rise 180ms ease-out" }}
             onSubmit={async (e) => {
               e.preventDefault();
@@ -29,7 +29,7 @@ export function ReportButton({ agentId }: { agentId: string }) {
             <h2 id="report-title" className="text-[17px] font-semibold">
               Bu agent'ı bildir
             </h2>
-            <p className="mt-1 text-[13px] leading-[18px] text-secondary">Link hemen kapatılır ve incelemeye alınır.</p>
+            <p className="mt-1 text-[13px] leading-[18px] text-ink-2">Link hemen kapatılır ve incelemeye alınır.</p>
             <label htmlFor="report-reason" className="sr-only">
               Neden
             </label>
@@ -38,7 +38,7 @@ export function ReportButton({ agentId }: { agentId: string }) {
               <button type="button" className="btn-quiet py-2" onClick={() => setState("idle")}>
                 Vazgeç
               </button>
-              <button className="btn bg-end py-2 text-white">Bildir</button>
+              <button className="btn bg-danger py-2 text-white">Bildir</button>
             </div>
           </form>
         </div>

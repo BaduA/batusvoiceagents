@@ -235,3 +235,40 @@ export function estimateVoiceCost(
     ((u.ttsCharacters ?? 0) / 1000) * (tts?.per1kChars ?? 0)
   );
 }
+
+/**
+ * Per-minute cost estimate for a model combination, before any call happens.
+ * Assumptions (typical demo call): STT streams the whole minute; the agent speaks ~40% of the time
+ * (~340 characters/min); ~4 agent turns/min, each sending the system prompt + history (~2,000 input
+ * tokens) and ~60 output tokens; LiveKit agent minutes ~$0.01 after the free allowance.
+ */
+export const PER_MINUTE_ASSUMPTIONS = {
+  ttsCharsPerMin: 340,
+  turnsPerMin: 4,
+  inputTokensPerTurn: 2000,
+  outputTokensPerTurn: 60,
+  platformPerMin: 0.01,
+};
+
+export interface PerMinuteEstimate {
+  lines: { id: "stt" | "llm" | "tts" | "realtime" | "platform"; label: string; usd: number }[];
+  total: number;
+}
+
+export function estimatePerMinute(combo: { mode: "pipeline" | "realtime"; stt?: string; llm?: string; tts?: string; realtime?: string }): PerMinuteEstimate {
+  const a = PER_MINUTE_ASSUMPTIONS;
+  const lines: PerMinuteEstimate["lines"] = [];
+  if (combo.mode === "realtime") {
+    const m = combo.realtime ? findRealtime(combo.realtime) : undefined;
+    lines.push({ id: "realtime", label: m?.label ?? "Realtime", usd: m?.perMinute ?? 0 });
+  } else {
+    const stt = combo.stt ? findStt(combo.stt) : undefined;
+    const tts = combo.tts ? findTts(combo.tts) : undefined;
+    const llmUsd = combo.llm ? estimateLlmCost(combo.llm, a.inputTokensPerTurn * a.turnsPerMin, a.outputTokensPerTurn * a.turnsPerMin) : 0;
+    lines.push({ id: "stt", label: stt?.label ?? "STT", usd: stt?.perMinute ?? 0 });
+    lines.push({ id: "llm", label: (combo.llm && findLlm(combo.llm)?.label) || "LLM", usd: llmUsd });
+    lines.push({ id: "tts", label: tts?.label ?? "TTS", usd: ((tts?.per1kChars ?? 0) * a.ttsCharsPerMin) / 1000 });
+  }
+  lines.push({ id: "platform", label: "LiveKit altyapı", usd: a.platformPerMin });
+  return { lines, total: lines.reduce((s, l) => s + l.usd, 0) };
+}

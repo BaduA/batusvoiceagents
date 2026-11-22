@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { getAgentBySlug, publicAgent } from "@/lib/agents";
 import { canEditAgent } from "@/lib/security";
 import { AppMark } from "@/components/SiteHeader";
-import { Workbench } from "@/components/Workbench";
+import { TalkApp } from "@/components/talk/TalkApp";
 import { ReportButton } from "@/components/ReportButton";
 
 export async function generateMetadata({ params }: PageProps<"/a/[slug]">): Promise<Metadata> {
@@ -20,13 +20,13 @@ export default async function SharedAgentPage({ params }: PageProps<"/a/[slug]">
   const editor = await canEditAgent(agent);
   if (!agent.shareEnabled && !editor) {
     return (
-      <main className="grid min-h-dvh place-items-center bg-window px-6">
+      <main className="grid min-h-dvh place-items-center bg-background px-6">
         <div className="max-w-sm text-center">
           <div className="flex justify-center">
             <AppMark size={56} />
           </div>
           <h1 className="mt-5 text-[22px] font-bold">Bu link şu an kapalı</h1>
-          <p className="mt-2 text-[15px] leading-[21px] text-secondary">Agent incelemede ya da sahibi tarafından paylaşıma kapatıldı.</p>
+          <p className="mt-2 text-[15px] leading-[21px] text-ink-2">Agent incelemede ya da sahibi tarafından paylaşıma kapatıldı.</p>
           <Link href="/" className="btn-quiet mt-6">
             Ana sayfaya dön
           </Link>
@@ -35,17 +35,15 @@ export default async function SharedAgentPage({ params }: PageProps<"/a/[slug]">
     );
   }
   const pub = publicAgent(agent, editor);
-  const c = pub.config;
   return (
-    <Workbench
+    <TalkApp
       agent={pub}
-      initialConfig={c}
+      initialConfig={pub.config}
       mode="shared"
-      subtitle={c.company.name || "Sesli demo"}
-      toolbarExtra={
+      headerExtra={
         <>
           {editor && (
-            <Link className="btn-quiet" href={`/agents/${agent.id}`}>
+            <Link className="btn-text text-xs" href={`/agents/${agent.id}`}>
               Düzenle
             </Link>
           )}

@@ -38,3 +38,18 @@ describe("actionToJsonSchema", () => {
     });
   });
 });
+
+import { estimatePerMinute } from "../src/catalog";
+
+describe("estimatePerMinute", () => {
+  it("adds STT, LLM, TTS and platform for a pipeline", () => {
+    const e = estimatePerMinute({ mode: "pipeline", stt: "deepgram:nova-3", llm: "openai:gpt-5.4-mini", tts: "cartesia:sonic-3" });
+    expect(e.lines.map((l) => l.id)).toEqual(["stt", "llm", "tts", "platform"]);
+    expect(e.total).toBeGreaterThan(0.02);
+    expect(e.total).toBeLessThan(0.1);
+  });
+  it("uses the realtime model's rate in realtime mode", () => {
+    const e = estimatePerMinute({ mode: "realtime", realtime: "openai:gpt-realtime-2.1-mini" });
+    expect(e.lines[0].usd).toBeCloseTo(0.06);
+  });
+});

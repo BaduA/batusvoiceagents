@@ -1,272 +1,198 @@
 @import "tailwindcss";
+@import "tw-animate-css";
 
 /*
- * v3 "field recorder": anodised aluminium chassis, raised plates, recessed wells,
- * one reflective LCD, one signal-orange key. See docs/DESIGN.md.
+ * Theme tokens from LiveKit's Agent Starter React (MIT, see components/agents-ui/LICENSE-livekit-agent-starter-react).
+ * Light/dark follow the system. Older token names used by forms (ink, line, surface...) map onto these.
  */
 :root {
-  --body: #d7d9d5;
-  --plate: #e6e8e4;
-  --plate-2: #dfe1dc;
-  --well: #c9ccc7;
-  --engrave: #2e322d;
-  --faint: #6c716a;
-  --dim: #9a9f97;
-  --groove-dark: rgb(46 50 45 / 0.16);
-  --groove-light: rgb(255 255 255 / 0.7);
-  --signal: #ff4f1a;
-  --signal-ink: #b8360c;
-  --signal-soft: rgb(255 79 26 / 0.12);
-  --fault: #b42a14;
-  --fault-soft: rgb(180 42 20 / 0.1);
-  --lcd-a: #bcc59d;
-  --lcd-b: #a8b286;
-  --lcd-ink: #28301f;
-  --lcd-dim: rgb(40 48 31 / 0.62);
-  --bezel: #2a2e27;
-  --key-hi: rgb(255 255 255 / 0.75);
-  --key-lo: rgb(0 0 0 / 0.22);
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --popover: oklch(1 0 0);
+  --primary: #002cf2;
+  --primary-hover: color-mix(in srgb, #002cf2 80%, #000);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.52 0 0);
+  --accent: oklch(0.97 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.88 0 0);
+  --ring: oklch(0.708 0 0);
+  --aura: #002cf2;
+  /* pipeline layer colours + raw aliases used in inline styles */
+  --stt: #10b981;
+  --llm: #a855f7;
+  --tts: #0ea5e9;
+  --rt: #f59e0b;
+  --eou: var(--muted-foreground);
+  --ink-3: var(--muted-foreground);
+  --surface: var(--card);
+  --line-strong: var(--input);
+  --danger: var(--destructive);
+  --board-2: var(--muted);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --body: #2b2d2a;
-    --plate: #353733;
-    --plate-2: #30322e;
-    --well: #20221f;
-    --engrave: #e2e5df;
-    --faint: #9aa096;
-    --dim: #6d7269;
-    --groove-dark: rgb(0 0 0 / 0.45);
-    --groove-light: rgb(255 255 255 / 0.06);
-    --signal: #ff5d2b;
-    --signal-ink: #ff8a5f;
-    --signal-soft: rgb(255 93 43 / 0.14);
-    --fault: #ff7a5c;
-    --fault-soft: rgb(255 122 92 / 0.12);
-    --lcd-a: #9eaa79;
-    --lcd-b: #8c9867;
-    --bezel: #151714;
-    --key-hi: rgb(255 255 255 / 0.1);
-    --key-lo: rgb(0 0 0 / 0.5);
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.205 0 0);
+    --popover: oklch(0.205 0 0);
+    --primary: #1fd5f9;
+    --primary-hover: color-mix(in srgb, #1fd5f9 80%, #000);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.371 0 0);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 18%);
+    --ring: oklch(0.556 0 0);
+    --aura: #1fd5f9;
     color-scheme: dark;
   }
 }
 
 @theme inline {
-  /* device palette */
-  --color-body: var(--body);
-  --color-plate: var(--plate);
-  --color-plate-2: var(--plate-2);
-  --color-well: var(--well);
-  --color-engrave: var(--engrave);
-  --color-faint: var(--faint);
-  --color-dim: var(--dim);
-  --color-signal: var(--signal);
-  --color-signal-ink: var(--signal-ink);
-  --color-signal-soft: var(--signal-soft);
-  --color-fault: var(--fault);
-  --color-fault-soft: var(--fault-soft);
-  --color-lcd-ink: var(--lcd-ink);
-  --color-lcd-dim: var(--lcd-dim);
-  --color-bezel: var(--bezel);
-  /* aliases kept for shared components */
-  --color-window: var(--body);
-  --color-surface: var(--plate);
-  --color-surface-2: var(--plate-2);
-  --color-fill: var(--well);
-  --color-fill-strong: var(--well);
-  --color-label: var(--engrave);
-  --color-secondary: var(--faint);
-  --color-tertiary: var(--dim);
-  --color-separator: var(--groove-dark);
-  --color-needle: var(--signal);
-  --color-needle-ink: var(--signal-ink);
-  --color-needle-soft: var(--signal-soft);
-  --color-end: var(--fault);
-  --color-end-soft: var(--fault-soft);
-  --color-call: var(--signal);
-  --font-sans: var(--font-ui), system-ui, sans-serif;
-  --font-lcd: var(--font-lcd), ui-monospace, monospace;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
-}
-
-html,
-body {
-  background: var(--body);
-  color: var(--engrave);
-}
-
-body {
-  font-family: var(--font-sans);
-  font-size: 15px;
-  font-variation-settings: "wdth" 100;
+  --font-sans: var(--font-public-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-commit-mono), ui-monospace, SFMono-Regular, Menlo, monospace;
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-popover: var(--popover);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  /* legacy aliases (forms, admin, dialogs) */
+  --color-bg: var(--background);
+  --color-surface: var(--card);
+  --color-surface-2: var(--muted);
+  --color-ink: var(--foreground);
+  --color-ink-2: color-mix(in oklch, var(--foreground) 72%, var(--muted-foreground));
+  --color-ink-3: var(--muted-foreground);
+  --color-line: var(--border);
+  --color-line-strong: var(--input);
+  --color-link: var(--primary);
+  --color-action: var(--primary);
+  --color-action-hover: var(--primary-hover);
+  --color-action-ink: var(--primary-foreground);
+  --color-danger: var(--destructive);
+  --color-danger-soft: color-mix(in oklch, var(--destructive) 12%, transparent);
+  --color-warn-soft: color-mix(in oklch, #f5a524 16%, transparent);
+  --color-warn-ink: color-mix(in oklch, #b26b00 85%, var(--foreground));
+  --color-board: var(--background);
+  --color-board-2: var(--muted);
+  --color-board-ink: var(--foreground);
+  --color-board-ink-2: var(--muted-foreground);
+  --color-stt: #10b981;
+  --color-llm: #a855f7;
+  --color-tts: #0ea5e9;
+  --color-rt: #f59e0b;
+  --color-eou: var(--muted-foreground);
+  --shadow-pop: 0 1px 2px rgb(0 0 0 / 0.08), 0 16px 48px -12px rgb(0 0 0 / 0.35);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 @layer base {
-  :focus-visible {
-    outline: 2px solid var(--signal);
-    outline-offset: 2px;
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
   ::selection {
-    background: var(--signal-soft);
+    background: color-mix(in srgb, var(--primary) 25%, transparent);
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--input) transparent;
   }
 }
 
-/* Stamped product-name type: Archivo pushed wide. */
-@utility stamp {
-  font-stretch: 122%;
-  font-variation-settings: "wdth" 122;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-/* A raised module plate, separated from the chassis by a milled groove. */
-@utility plate {
-  background: var(--plate);
-  border-radius: 10px;
-  box-shadow:
-    0 0 0 1px var(--groove-dark),
-    inset 0 1px 0 var(--groove-light);
-}
-
-/* Milled groove between rows on a plate. */
-@utility groove {
-  box-shadow:
-    inset 0 1px 0 var(--groove-dark),
-    inset 0 2px 0 var(--groove-light);
-}
-
-/* Recessed well (inputs, key beds). */
-@utility well {
-  background: var(--well);
-  box-shadow: inset 0 1px 2px var(--key-lo);
-}
-
-/* Hardware key: raised, sinks when pressed or active. */
-@utility key {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  border-radius: 7px;
-  background: var(--plate);
-  color: var(--engrave);
-  font-weight: 600;
-  box-shadow:
-    0 0 0 1px var(--groove-dark),
-    inset 0 1px 0 var(--key-hi),
-    0 2px 0 var(--key-lo);
-  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
-  &:active:not(:disabled),
-  &[aria-pressed="true"],
-  &[aria-checked="true"]:not([role="switch"]),
-  &[aria-current="page"] {
-    transform: translateY(2px);
-    background: var(--plate-2);
-    box-shadow:
-      0 0 0 1px var(--groove-dark),
-      inset 0 1px 2px var(--key-lo);
-  }
-  &:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
+/* form + button utilities used across settings, admin and dialogs */
+@utility field {
+  @apply w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm leading-6 text-foreground placeholder:text-muted-foreground outline-none transition-[border-color,box-shadow] dark:bg-input/30;
+  &:focus {
+    border-color: var(--ring);
+    box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 40%, transparent);
   }
 }
-
-/* The reflective LCD glass inside its dark bezel. */
-@utility lcd {
-  color: var(--lcd-ink);
-  border-radius: 6px;
-  background:
-    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.035) 0 1px, transparent 1px 3px),
-    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.025) 0 1px, transparent 1px 3px),
-    linear-gradient(170deg, var(--lcd-a), var(--lcd-b));
-  box-shadow:
-    inset 0 2px 8px rgb(0 0 0 / 0.35),
-    inset 0 0 0 1px rgb(0 0 0 / 0.25);
+@utility field-bare {
+  @apply w-full bg-transparent text-sm leading-6 text-foreground placeholder:text-muted-foreground outline-none;
 }
-@utility bezel {
-  background: var(--bezel);
-  border-radius: 14px;
-  padding: 10px;
-  box-shadow:
-    0 0 0 1px var(--groove-dark),
-    inset 0 1px 0 rgb(255 255 255 / 0.08);
-}
-@utility lcd-num {
-  font-family: var(--font-lcd);
-  font-weight: 900;
-  font-variation-settings: "ROND" 60;
-  letter-spacing: 0.02em;
-}
-
-/* --- shared form utilities, restyled for the device --- */
 @utility group-list {
-  @apply plate overflow-hidden;
+  @apply overflow-hidden rounded-lg border border-border bg-card;
   & > * + * {
-    box-shadow:
-      inset 0 1px 0 var(--groove-dark),
-      inset 0 2px 0 var(--groove-light);
+    border-top: 1px solid var(--border);
   }
 }
 @utility group-title {
-  @apply mb-1.5 px-1 text-[13px] font-semibold lowercase text-faint;
+  @apply mb-2 text-sm font-semibold text-foreground;
 }
 @utility group-foot {
-  @apply mt-1.5 px-1 text-[12px] leading-[17px] text-faint;
+  @apply mt-2 text-xs leading-5 text-muted-foreground;
 }
 @utility row {
   @apply flex min-h-11 items-center gap-3 px-4 py-2;
 }
-@utility field {
-  @apply well w-full rounded-[6px] px-2.5 py-1.5 text-[15px] leading-6 text-engrave placeholder:text-dim outline-none;
-  &:focus {
-    box-shadow:
-      inset 0 1px 2px var(--key-lo),
-      0 0 0 2px var(--signal);
-  }
-}
-@utility field-bare {
-  @apply w-full bg-transparent text-[15px] leading-6 text-engrave placeholder:text-dim outline-none;
-}
 @utility label {
-  @apply text-[15px] text-engrave;
+  @apply text-sm text-foreground;
 }
 @utility hint {
-  @apply text-[12px] leading-[17px] text-faint;
+  @apply text-xs leading-5 text-muted-foreground;
 }
 @utility btn {
-  @apply key px-3 py-1.5 text-[14px];
+  @apply inline-flex items-center justify-center gap-2 rounded-md px-3.5 py-2 text-sm font-medium whitespace-nowrap transition-colors disabled:pointer-events-none disabled:opacity-50;
 }
 @utility btn-primary {
-  @apply key px-3.5 py-1.5 text-[14px];
-  background: var(--engrave);
-  color: var(--plate);
-  box-shadow:
-    0 0 0 1px var(--groove-dark),
-    inset 0 1px 0 rgb(255 255 255 / 0.18),
-    0 2px 0 var(--key-lo);
+  @apply btn bg-primary text-primary-foreground hover:bg-primary-hover;
 }
 @utility btn-quiet {
-  @apply key px-3 py-1.5 text-[14px];
+  @apply btn border border-input bg-background hover:bg-accent dark:bg-input/30 dark:hover:bg-input/50;
+}
+@utility btn-danger {
+  @apply btn bg-destructive text-white hover:bg-destructive/90;
 }
 @utility btn-text {
-  @apply inline-flex items-center gap-1.5 rounded-[6px] px-2 py-1.5 text-[14px] font-medium text-faint hover:text-engrave disabled:opacity-40;
+  @apply btn px-2 text-muted-foreground hover:text-foreground;
 }
 
 @keyframes rise {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
-@keyframes blink {
-  0%, 55% { opacity: 1; }
-  56%, 100% { opacity: 0.15; }
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
 }
-@keyframes boot {
-  from { opacity: 0; filter: brightness(0.6); }
-  to { opacity: 1; filter: none; }
+@keyframes draw {
+  from { clip-path: inset(0 100% 0 0); }
+  to { clip-path: inset(0 0 0 0); }
+}
+@keyframes sheet-in {
+  from { transform: translateX(100%); }
+  to { transform: none; }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
 @media (prefers-reduced-motion: reduce) {

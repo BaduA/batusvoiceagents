@@ -1,9 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { createContext, useContext, useMemo, useState } from "react";
+
+/** Inside the settings sheet groups drop their card: the accordion already frames them. */
+const CompactCtx = createContext(false);
 import { agentConfigSchema, buildPersonaPrompt, buildSystemPrompt, type AgentConfig } from "@vap/core";
 import type { ProviderAvailability } from "@/lib/providers";
-import { ModelPicker, SelectRow } from "./ModelPicker";
+import { ModelPicker, Select } from "./ModelPicker";
 import { Switch } from "./ui/Switch";
 
 export type Section = "task" | "persona" | "knowledge" | "actions" | "models" | "advanced";
@@ -15,6 +18,15 @@ export const SECTION_TITLES: Record<Section, string> = {
   actions: "İşlemler",
   models: "Modeller",
   advanced: "Gelişmiş",
+};
+
+const SECTION_HELP: Record<Section, string> = {
+  task: "Agent kim, hangi şirketi temsil ediyor ve ne yapıyor? Buraya yazdıklarınız agent'ın talimatı olur.",
+  persona: "Nasıl konuştuğu: ton, dil ve cevap uzunluğu. Sert veya esprili karakterler serbest.",
+  knowledge: "Agent'ın bilmesi gerekenler: fiyatlar, saatler, sık sorulan sorular. Burada olmayanı uydurmaz.",
+  actions: "Agent'ın görüşmede tetikleyebileceği işlemler, ör. randevu oluşturma. Gerçek bir sisteme bağlanmaz, simüle edilir.",
+  models: "Konuşmanın izlediği güzergâh: sesi yazıya çeviren, cevabı yazan ve seslendiren modeller.",
+  advanced: "Üretilen sistem prompt'u ve agent tanımının ham JSON hali. Deneyimli kullanıcılar için.",
 };
 
 const TONES = ["samimi", "resmi", "esprili", "sert", "sakin", "enerjik"];
@@ -33,11 +45,14 @@ export function DefinitionSection({
   config,
   onChange,
   providers,
+  compact = false,
 }: {
   section: Section;
   config: AgentConfig;
   onChange: (c: AgentConfig) => void;
   providers: ProviderAvailability | null;
+  /** Inside the settings sheet: no page heading, no page padding. */
+  compact?: boolean;
 }) {
   const set = (fn: (d: AgentConfig) => void) => {
     const draft = structuredClone(config);
@@ -46,8 +61,16 @@ export function DefinitionSection({
   };
 
   return (
-    <div className="mx-auto w-full max-w-[640px] space-y-7 px-4 py-6 sm:px-6 sm:py-8">
-      <h2 className="stamp px-1 text-[26px] leading-none">{SECTION_TITLES[section].toLocaleLowerCase("tr")}</h2>
+    <CompactCtx.Provider value={compact}>
+    <div className={compact ? "space-y-5" : "mx-auto w-full max-w-[640px] space-y-7 px-4 py-6 sm:px-6 sm:py-8"}>
+      {compact ? (
+        <p className="text-xs leading-5 text-muted-foreground">{SECTION_HELP[section]}</p>
+      ) : (
+        <div>
+          <h2 className="text-[24px] font-bold leading-8">{SECTION_TITLES[section]}</h2>
+          <p className="mt-1 max-w-[60ch] text-[15px] leading-[23px] text-ink-2">{SECTION_HELP[section]}</p>
+        </div>
+      )}
       {section === "task" && (
         <>
           <Group title="Agent">
@@ -69,14 +92,16 @@ export function DefinitionSection({
         <>
           <Group foot="Serbest yazabilirsiniz: “alaycı ama yardımsever”, “küfürlü vergi danışmanı”…">
             <InputRow id="tone" label="Ton" value={config.persona.tone} onChange={(v) => set((d) => void (d.persona.tone = v))} />
-            <div className="flex flex-wrap gap-1.5 px-4 py-3">
+            <div className="flex flex-wrap gap-1.5">
               {TONES.map((t) => (
                 <button
                   key={t}
                   type="button"
                   onClick={() => set((d) => void (d.persona.tone = t))}
                   aria-pressed={config.persona.tone === t}
-                  className="key px-3 py-1 text-[13px]"
+                  className={`rounded-full border px-3 py-1 text-[13px] font-semibold transition-colors duration-150 ${
+                    config.persona.tone === t ? "border-ink bg-ink text-surface" : "border-line text-ink-2 hover:border-line-strong hover:text-ink"
+                  }`}
                 >
                   {t}
                 </button>
@@ -84,9 +109,14 @@ export function DefinitionSection({
             </div>
           </Group>
           <Group title="Konuşma" foot="Kullanıcı başka bir dilde konuşursa agent onun diline geçer. Kısa cevaplar seste daha doğal duyulur ve gecikmeyi azaltır.">
-            <SelectRow id="lang" label="Dil" value={config.persona.language} options={LANGS.map(([id, label]) => ({ id, label, available: true }))} onChange={(v) => set((d) => void (d.persona.language = v))} />
-            <div className="row">
-              <span className="label flex-1">Cevap uzunluğu</span>
+            <div>
+              <label htmlFor="lang" className="mb-1.5 block text-sm font-medium">
+                Dil
+              </label>
+              <Select id="lang" label="Dil" value={config.persona.language} options={LANGS.map(([id, label]) => ({ id, label, available: true }))} onChange={(v) => set((d) => void (d.persona.language = v))} />
+            </div>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[14px] font-semibold">Cevap uzunluğu</span>
               <Stepper
                 value={config.limits.max_reply_sentences}
                 min={1}
@@ -107,7 +137,7 @@ export function DefinitionSection({
           title="Bilgi metni"
           foot={`SSS, fiyat listesi, politika… ${config.knowledge.length.toLocaleString("tr-TR")} / 30.000 karakter.`}
           action={
-            <label className="cursor-pointer text-[13px] font-medium text-needle-ink hover:underline">
+            <label className="cursor-pointer text-[13px] font-semibold text-link hover:underline">
               Dosyadan ekle
               <input
                 type="file"
@@ -129,21 +159,21 @@ export function DefinitionSection({
 
       {section === "actions" && (
         <Group title="Tanımlı işlemler" foot="İşlem düzenleyici ve simülatör sıradaki adımda geliyor. Şimdilik şablondaki işlem tanımları kaydedilir ama agent görüşmede bunları çağırmaz.">
-          {config.actions.length === 0 && <p className="row text-secondary">Bu agent için tanımlı işlem yok.</p>}
+          {config.actions.length === 0 && <p className="text-ink-2">Bu agent için tanımlı işlem yok.</p>}
           {config.actions.map((a) => (
-            <div key={a.name} className="px-4 py-3">
+            <div key={a.name} className="border-t border-line pt-4 first:border-t-0 first:pt-0">
               <div className="flex items-baseline justify-between gap-3">
                 <code className="font-mono text-[13.5px] font-medium">{a.name}</code>
-                <span className="text-[12px] text-secondary">
+                <span className="text-[12px] text-ink-3">
                   {a.response_mode}
                   {a.requires_confirmation ? ", onay ister" : ""}
                 </span>
               </div>
-              <p className="mt-0.5 text-[14px] text-secondary">{a.description}</p>
+              <p className="mt-0.5 text-[14px] text-ink-2">{a.description}</p>
               {a.params.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
                   {a.params.map((p) => (
-                    <span key={p.name} className="rounded-[5px] bg-fill px-1.5 py-0.5 font-mono text-[11.5px] text-secondary">
+                    <span key={p.name} className="rounded-[4px] border border-line bg-surface-2 px-1.5 py-0.5 font-mono text-[12px] text-ink-2">
                       {p.name}
                       {p.required ? "" : "?"}: {p.type}
                     </span>
@@ -158,7 +188,8 @@ export function DefinitionSection({
       {section === "models" &&
         (providers ? (
           <div>
-            <p className="group-title">Ses kombinasyonu</p>
+            <h3 className="group-title">Güzergâh</h3>
+            <div className="rounded-[8px] border border-line bg-surface p-4 sm:p-5">
             <ModelPicker
               idPrefix="def"
               value={config.providers}
@@ -167,18 +198,20 @@ export function DefinitionSection({
               sampleText={sample(config)}
               onChange={(v) => set((d) => void (d.providers = v))}
             />
+            </div>
             <p className="group-foot">
               {providers.voice
-                ? "Pipeline modunda her katmanı ayrı seçersiniz ve gecikme katman katman ölçülür. Realtime modunda tek model hem dinler hem konuşur; genelde daha hızlıdır, kontrolü daha azdır."
+                ? "Aktarmalı güzergâhta üç modeli ayrı seçersiniz ve gecikme durak durak ölçülür. Ekspres (realtime) modelde tek model hem dinler hem konuşur; genelde daha hızlıdır, ama durakları ayrı ölçemezsiniz."
                 : "Sesli mod için sunucuda LiveKit ayarları eksik. Modeller seçilebilir ama görüşme başlatılamaz."}
             </p>
           </div>
         ) : (
-          <p className="text-secondary">Sağlayıcılar yükleniyor…</p>
+          <p className="text-ink-2">Sağlayıcılar yükleniyor…</p>
         ))}
 
       {section === "advanced" && <AdvancedSection config={config} onChange={onChange} />}
     </div>
+    </CompactCtx.Provider>
   );
 }
 
@@ -190,15 +223,16 @@ export function sample(config: AgentConfig) {
 }
 
 export function Group({ title, foot, action, children }: { title?: string; foot?: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
+  const compact = useContext(CompactCtx);
   return (
     <section>
       {(title || action) && (
-        <div className="mb-1.5 flex items-baseline justify-between px-1">
-          {title && <h3 className="text-[13px] font-semibold lowercase text-faint">{title}</h3>}
+        <div className="mb-2 flex items-baseline justify-between">
+          {title && <h3 className={compact ? "font-mono text-[11px] font-bold tracking-wider text-muted-foreground uppercase" : "text-[15px] font-bold"}>{title}</h3>}
           {action}
         </div>
       )}
-      <div className="group-list">{children}</div>
+      <div className={compact ? "space-y-4" : "space-y-4 rounded-[8px] border border-line bg-surface p-4 sm:p-5"}>{children}</div>
       {foot && <p className="group-foot">{foot}</p>}
     </section>
   );
@@ -206,22 +240,24 @@ export function Group({ title, foot, action, children }: { title?: string; foot?
 
 function InputRow({ id, label, value, onChange, placeholder }: { id: string; label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
   return (
-    <label htmlFor={id} className="row cursor-text">
-      <span className="label w-28 shrink-0 sm:w-32">{label}</span>
-      <input id={id} className="field-bare text-right text-secondary focus:text-label" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
-    </label>
+    <div>
+      <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
+        {label}
+      </label>
+      <input id={id} className="field" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+    </div>
   );
 }
 
 function TextRow({ id, label, value, onChange, rows, placeholder }: { id: string; label?: string; value: string; onChange: (v: string) => void; rows: number; placeholder?: string }) {
   return (
-    <div className="px-4 py-2.5">
+    <div>
       {label && (
-        <label htmlFor={id} className="mb-1 block text-[13px] text-secondary">
+        <label htmlFor={id} className="mb-1.5 block text-sm font-medium">
           {label}
         </label>
       )}
-      <textarea id={id} rows={rows} className="field-bare resize-y" value={value} placeholder={placeholder} aria-label={label} onChange={(e) => onChange(e.target.value)} />
+      <textarea id={id} rows={rows} className="field resize-y" value={value} placeholder={placeholder} aria-label={label} onChange={(e) => onChange(e.target.value)} />
     </div>
   );
 }
@@ -229,13 +265,13 @@ function TextRow({ id, label, value, onChange, rows, placeholder }: { id: string
 function Stepper({ value, min, max, onChange, format }: { value: number; min: number; max: number; onChange: (n: number) => void; format: (n: number) => string }) {
   return (
     <div className="flex items-center gap-3">
-      <span className="text-[15px] tabular-nums text-secondary">{format(value)}</span>
-      <div className="flex overflow-hidden rounded-[7px] bg-fill">
-        <button type="button" aria-label="Azalt" disabled={value <= min} onClick={() => onChange(value - 1)} className="px-3 py-1 text-[17px] leading-none disabled:opacity-30">
+      <span className="text-[15px] text-ink-2">{format(value)}</span>
+      <div className="flex overflow-hidden rounded-[6px] border border-line">
+        <button type="button" aria-label="Azalt" disabled={value <= min} onClick={() => onChange(value - 1)} className="px-3 py-1 text-[17px] leading-none hover:bg-surface-2 disabled:opacity-30">
           −
         </button>
-        <span className="my-1.5 w-px bg-separator" />
-        <button type="button" aria-label="Artır" disabled={value >= max} onClick={() => onChange(value + 1)} className="px-3 py-1 text-[17px] leading-none disabled:opacity-30">
+        <span className="w-px bg-line" />
+        <button type="button" aria-label="Artır" disabled={value >= max} onClick={() => onChange(value + 1)} className="px-3 py-1 text-[17px] leading-none hover:bg-surface-2 disabled:opacity-30">
           +
         </button>
       </div>
@@ -253,28 +289,28 @@ function AdvancedSection({ config, onChange }: { config: AgentConfig; onChange: 
   return (
     <>
       <Group title="Sistem prompt'u" foot="En baştaki güvenlik kuralları her zaman eklenir ve düzenlenemez. Elle düzenleme yalnızca altındaki kısmı değiştirir.">
-        <div className="row">
-          <label htmlFor="override" className="label flex-1">
+        <div className="flex items-center justify-between gap-3">
+          <label htmlFor="override" className="text-[14px] font-semibold">
             Elle düzenle
           </label>
           <Switch id="override" label="Prompt'u elle düzenle" checked={overriding} onChange={(v) => onChange({ ...config, prompt_override: v ? generated : undefined })} />
         </div>
         {overriding ? (
-          <div className="px-4 py-2.5">
-            <textarea rows={14} aria-label="Prompt" className="field-bare resize-y font-mono text-[12.5px] leading-5" value={config.prompt_override} onChange={(e) => onChange({ ...config, prompt_override: e.target.value })} />
+          <div>
+            <textarea rows={14} aria-label="Prompt" className="field resize-y font-mono text-[12.5px] leading-5" value={config.prompt_override} onChange={(e) => onChange({ ...config, prompt_override: e.target.value })} />
           </div>
         ) : (
-          <pre className="max-h-80 overflow-auto whitespace-pre-wrap px-4 py-3 font-mono text-[12px] leading-5 text-secondary">{full}</pre>
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-[6px] bg-surface-2 px-3.5 py-3 font-mono text-[12px] leading-5 text-ink-2">{full}</pre>
         )}
       </Group>
 
       <Group
         title="Ham JSON"
-        foot={rawError ? <span className="text-end">{rawError}</span> : "Tanımın tamamı. Uygulamadan önce doğrulanır."}
+        foot={rawError ? <span className="text-danger">{rawError}</span> : "Tanımın tamamı. Uygulamadan önce doğrulanır."}
         action={
           <button
             type="button"
-            className="text-[13px] font-medium text-needle-ink hover:underline"
+            className="btn-quiet py-1 text-[13px]"
             onClick={() => {
               try {
                 const parsed = agentConfigSchema.safeParse(JSON.parse(raw));
@@ -293,11 +329,11 @@ function AdvancedSection({ config, onChange }: { config: AgentConfig; onChange: 
           </button>
         }
       >
-        <div className="px-4 py-2.5">
+        <div>
           <textarea
             rows={14}
             aria-label="Ham JSON"
-            className="field-bare resize-y font-mono text-[12.5px] leading-5"
+            className="field resize-y font-mono text-[12.5px] leading-5"
             value={raw}
             onChange={(e) => setRaw(e.target.value)}
             onFocus={() => setRaw(JSON.stringify(config, null, 2))}

@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { getAgentById, publicAgent } from "@/lib/agents";
 import { canEditAgent } from "@/lib/security";
-import { Workbench } from "@/components/Workbench";
+import { TalkApp } from "@/components/talk/TalkApp";
 
 export default async function AgentPage({ params }: PageProps<"/agents/[id]">) {
   const { id } = await params;
@@ -12,5 +12,5 @@ export default async function AgentPage({ params }: PageProps<"/agents/[id]">) {
     notFound();
   }
   const pub = publicAgent(agent, true);
-  return <Workbench agent={pub} initialConfig={pub.config} mode="edit" />;
+  return <TalkApp agent={pub} initialConfig={pub.config} mode="edit" />;
 }

@@ -1,167 +1,272 @@
 @import "tailwindcss";
 
-/* Native-app materials. Light/dark follow the system appearance. */
+/*
+ * v3 "field recorder": anodised aluminium chassis, raised plates, recessed wells,
+ * one reflective LCD, one signal-orange key. See docs/DESIGN.md.
+ */
 :root {
-  --window: #ececef;
-  --sidebar: rgb(232 232 237 / 0.72);
-  --surface: #ffffff;
-  --surface-2: #f5f5f7;
-  --fill: rgb(120 120 128 / 0.12);
-  --fill-strong: rgb(120 120 128 / 0.2);
-  --label: #1d1d1f;
-  --secondary: #6e6e73;
-  --tertiary: #aeaeb2;
-  --separator: rgb(60 60 67 / 0.14);
-  --needle: #f0a020;
-  --needle-ink: #8a5a00;
-  --needle-soft: rgb(240 160 32 / 0.16);
-  --call: #30b158;
-  --end: #ff3b30;
-  --end-soft: rgb(255 59 48 / 0.1);
-  --bubble-me: #e9e9eb;
-  --shadow-window: 0 0 0 0.5px rgb(0 0 0 / 0.12), 0 12px 40px -12px rgb(0 0 0 / 0.25);
-  --shadow-float: 0 0 0 0.5px rgb(0 0 0 / 0.08), 0 8px 24px -8px rgb(0 0 0 / 0.22);
-  --code-bg: #1e1e20;
-  --code-text: #e6e6ea;
+  --body: #d7d9d5;
+  --plate: #e6e8e4;
+  --plate-2: #dfe1dc;
+  --well: #c9ccc7;
+  --engrave: #2e322d;
+  --faint: #6c716a;
+  --dim: #9a9f97;
+  --groove-dark: rgb(46 50 45 / 0.16);
+  --groove-light: rgb(255 255 255 / 0.7);
+  --signal: #ff4f1a;
+  --signal-ink: #b8360c;
+  --signal-soft: rgb(255 79 26 / 0.12);
+  --fault: #b42a14;
+  --fault-soft: rgb(180 42 20 / 0.1);
+  --lcd-a: #bcc59d;
+  --lcd-b: #a8b286;
+  --lcd-ink: #28301f;
+  --lcd-dim: rgb(40 48 31 / 0.62);
+  --bezel: #2a2e27;
+  --key-hi: rgb(255 255 255 / 0.75);
+  --key-lo: rgb(0 0 0 / 0.22);
   color-scheme: light;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --window: #161618;
-    --sidebar: rgb(40 40 43 / 0.72);
-    --surface: #232326;
-    --surface-2: #2c2c2f;
-    --fill: rgb(120 120 128 / 0.24);
-    --fill-strong: rgb(120 120 128 / 0.36);
-    --label: #f5f5f7;
-    --secondary: #98989d;
-    --tertiary: #636366;
-    --separator: rgb(84 84 88 / 0.55);
-    --needle: #ffb340;
-    --needle-ink: #ffcf80;
-    --needle-soft: rgb(255 179 64 / 0.16);
-    --end-soft: rgb(255 69 58 / 0.16);
-    --bubble-me: #3a3a3c;
-    --shadow-window: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 16px 48px -12px rgb(0 0 0 / 0.7);
-    --shadow-float: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 8px 24px -8px rgb(0 0 0 / 0.6);
-    --code-bg: #141416;
+    --body: #2b2d2a;
+    --plate: #353733;
+    --plate-2: #30322e;
+    --well: #20221f;
+    --engrave: #e2e5df;
+    --faint: #9aa096;
+    --dim: #6d7269;
+    --groove-dark: rgb(0 0 0 / 0.45);
+    --groove-light: rgb(255 255 255 / 0.06);
+    --signal: #ff5d2b;
+    --signal-ink: #ff8a5f;
+    --signal-soft: rgb(255 93 43 / 0.14);
+    --fault: #ff7a5c;
+    --fault-soft: rgb(255 122 92 / 0.12);
+    --lcd-a: #9eaa79;
+    --lcd-b: #8c9867;
+    --bezel: #151714;
+    --key-hi: rgb(255 255 255 / 0.1);
+    --key-lo: rgb(0 0 0 / 0.5);
     color-scheme: dark;
   }
 }
 
 @theme inline {
-  --color-window: var(--window);
-  --color-sidebar: var(--sidebar);
-  --color-surface: var(--surface);
-  --color-surface-2: var(--surface-2);
-  --color-fill: var(--fill);
-  --color-fill-strong: var(--fill-strong);
-  --color-label: var(--label);
-  --color-secondary: var(--secondary);
-  --color-tertiary: var(--tertiary);
-  --color-separator: var(--separator);
-  --color-needle: var(--needle);
-  --color-needle-ink: var(--needle-ink);
-  --color-needle-soft: var(--needle-soft);
-  --color-call: var(--call);
-  --color-end: var(--end);
-  --color-end-soft: var(--end-soft);
-  --color-bubble-me: var(--bubble-me);
-  --color-code-bg: var(--code-bg);
-  --color-code-text: var(--code-text);
-  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI Variable Text", "Segoe UI", Roboto, var(--font-ui), system-ui, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", var(--font-code), monospace;
-  --shadow-window: var(--shadow-window);
-  --shadow-float: var(--shadow-float);
+  /* device palette */
+  --color-body: var(--body);
+  --color-plate: var(--plate);
+  --color-plate-2: var(--plate-2);
+  --color-well: var(--well);
+  --color-engrave: var(--engrave);
+  --color-faint: var(--faint);
+  --color-dim: var(--dim);
+  --color-signal: var(--signal);
+  --color-signal-ink: var(--signal-ink);
+  --color-signal-soft: var(--signal-soft);
+  --color-fault: var(--fault);
+  --color-fault-soft: var(--fault-soft);
+  --color-lcd-ink: var(--lcd-ink);
+  --color-lcd-dim: var(--lcd-dim);
+  --color-bezel: var(--bezel);
+  /* aliases kept for shared components */
+  --color-window: var(--body);
+  --color-surface: var(--plate);
+  --color-surface-2: var(--plate-2);
+  --color-fill: var(--well);
+  --color-fill-strong: var(--well);
+  --color-label: var(--engrave);
+  --color-secondary: var(--faint);
+  --color-tertiary: var(--dim);
+  --color-separator: var(--groove-dark);
+  --color-needle: var(--signal);
+  --color-needle-ink: var(--signal-ink);
+  --color-needle-soft: var(--signal-soft);
+  --color-end: var(--fault);
+  --color-end-soft: var(--fault-soft);
+  --color-call: var(--signal);
+  --font-sans: var(--font-ui), system-ui, sans-serif;
+  --font-lcd: var(--font-lcd), ui-monospace, monospace;
+  --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", monospace;
 }
 
 html,
 body {
-  background: var(--window);
-  color: var(--label);
+  background: var(--body);
+  color: var(--engrave);
 }
 
 body {
   font-family: var(--font-sans);
   font-size: 15px;
-  -webkit-font-smoothing: antialiased;
-  letter-spacing: -0.005em;
+  font-variation-settings: "wdth" 100;
 }
 
 @layer base {
   :focus-visible {
-    outline: 3px solid color-mix(in srgb, var(--needle) 70%, transparent);
-    outline-offset: 1px;
-    border-radius: 7px;
+    outline: 2px solid var(--signal);
+    outline-offset: 2px;
   }
   ::selection {
-    background: var(--needle-soft);
+    background: var(--signal-soft);
   }
 }
 
-/* Inset grouped list (System Settings style) */
-@utility group-list {
-  @apply overflow-hidden rounded-[10px] bg-surface;
-  & > * + * {
-    position: relative;
+/* Stamped product-name type: Archivo pushed wide. */
+@utility stamp {
+  font-stretch: 122%;
+  font-variation-settings: "wdth" 122;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* A raised module plate, separated from the chassis by a milled groove. */
+@utility plate {
+  background: var(--plate);
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px var(--groove-dark),
+    inset 0 1px 0 var(--groove-light);
+}
+
+/* Milled groove between rows on a plate. */
+@utility groove {
+  box-shadow:
+    inset 0 1px 0 var(--groove-dark),
+    inset 0 2px 0 var(--groove-light);
+}
+
+/* Recessed well (inputs, key beds). */
+@utility well {
+  background: var(--well);
+  box-shadow: inset 0 1px 2px var(--key-lo);
+}
+
+/* Hardware key: raised, sinks when pressed or active. */
+@utility key {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border-radius: 7px;
+  background: var(--plate);
+  color: var(--engrave);
+  font-weight: 600;
+  box-shadow:
+    0 0 0 1px var(--groove-dark),
+    inset 0 1px 0 var(--key-hi),
+    0 2px 0 var(--key-lo);
+  transition: transform 80ms ease, box-shadow 80ms ease, background 120ms ease;
+  &:active:not(:disabled),
+  &[aria-pressed="true"],
+  &[aria-checked="true"]:not([role="switch"]),
+  &[aria-current="page"] {
+    transform: translateY(2px);
+    background: var(--plate-2);
+    box-shadow:
+      0 0 0 1px var(--groove-dark),
+      inset 0 1px 2px var(--key-lo);
   }
-  /* Hairline inset from the leading edge, like UITableView separators */
-  & > * + *::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 16px;
-    right: 0;
-    height: 0.5px;
-    background: var(--separator);
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+/* The reflective LCD glass inside its dark bezel. */
+@utility lcd {
+  color: var(--lcd-ink);
+  border-radius: 6px;
+  background:
+    repeating-linear-gradient(0deg, rgb(0 0 0 / 0.035) 0 1px, transparent 1px 3px),
+    repeating-linear-gradient(90deg, rgb(0 0 0 / 0.025) 0 1px, transparent 1px 3px),
+    linear-gradient(170deg, var(--lcd-a), var(--lcd-b));
+  box-shadow:
+    inset 0 2px 8px rgb(0 0 0 / 0.35),
+    inset 0 0 0 1px rgb(0 0 0 / 0.25);
+}
+@utility bezel {
+  background: var(--bezel);
+  border-radius: 14px;
+  padding: 10px;
+  box-shadow:
+    0 0 0 1px var(--groove-dark),
+    inset 0 1px 0 rgb(255 255 255 / 0.08);
+}
+@utility lcd-num {
+  font-family: var(--font-lcd);
+  font-weight: 900;
+  font-variation-settings: "ROND" 60;
+  letter-spacing: 0.02em;
+}
+
+/* --- shared form utilities, restyled for the device --- */
+@utility group-list {
+  @apply plate overflow-hidden;
+  & > * + * {
+    box-shadow:
+      inset 0 1px 0 var(--groove-dark),
+      inset 0 2px 0 var(--groove-light);
   }
 }
 @utility group-title {
-  @apply mb-1.5 px-4 text-[13px] font-medium text-secondary;
+  @apply mb-1.5 px-1 text-[13px] font-semibold lowercase text-faint;
 }
 @utility group-foot {
-  @apply mt-1.5 px-4 text-[12px] leading-[17px] text-secondary;
+  @apply mt-1.5 px-1 text-[12px] leading-[17px] text-faint;
 }
 @utility row {
   @apply flex min-h-11 items-center gap-3 px-4 py-2;
 }
-/* Native-looking text inputs inside rows */
 @utility field {
-  @apply w-full rounded-[7px] bg-fill px-2.5 py-1.5 text-[15px] leading-6 text-label placeholder:text-tertiary outline-none transition-shadow;
+  @apply well w-full rounded-[6px] px-2.5 py-1.5 text-[15px] leading-6 text-engrave placeholder:text-dim outline-none;
   &:focus {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--needle) 45%, transparent);
+    box-shadow:
+      inset 0 1px 2px var(--key-lo),
+      0 0 0 2px var(--signal);
   }
 }
 @utility field-bare {
-  @apply w-full bg-transparent text-[15px] leading-6 text-label placeholder:text-tertiary outline-none;
+  @apply w-full bg-transparent text-[15px] leading-6 text-engrave placeholder:text-dim outline-none;
 }
 @utility label {
-  @apply text-[15px] text-label;
+  @apply text-[15px] text-engrave;
 }
 @utility hint {
-  @apply text-[12px] leading-[17px] text-secondary;
+  @apply text-[12px] leading-[17px] text-faint;
 }
 @utility btn {
-  @apply inline-flex items-center justify-center gap-1.5 rounded-[7px] px-3 py-1.5 text-[14px] font-medium transition-[background,opacity] disabled:cursor-not-allowed disabled:opacity-40;
+  @apply key px-3 py-1.5 text-[14px];
 }
 @utility btn-primary {
-  @apply btn bg-label text-surface hover:opacity-90;
+  @apply key px-3.5 py-1.5 text-[14px];
+  background: var(--engrave);
+  color: var(--plate);
+  box-shadow:
+    0 0 0 1px var(--groove-dark),
+    inset 0 1px 0 rgb(255 255 255 / 0.18),
+    0 2px 0 var(--key-lo);
 }
 @utility btn-quiet {
-  @apply btn bg-fill text-label hover:bg-fill-strong;
+  @apply key px-3 py-1.5 text-[14px];
 }
 @utility btn-text {
-  @apply btn px-2 text-secondary hover:text-label;
+  @apply inline-flex items-center gap-1.5 rounded-[6px] px-2 py-1.5 text-[14px] font-medium text-faint hover:text-engrave disabled:opacity-40;
 }
 
 @keyframes rise {
-  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: none; }
 }
-@keyframes ring {
-  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--call) 50%, transparent); }
-  100% { box-shadow: 0 0 0 18px transparent; }
+@keyframes blink {
+  0%, 55% { opacity: 1; }
+  56%, 100% { opacity: 0.15; }
+}
+@keyframes boot {
+  from { opacity: 0; filter: brightness(0.6); }
+  to { opacity: 1; filter: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {

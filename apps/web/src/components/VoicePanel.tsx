@@ -17,9 +17,9 @@ import type { ProviderAvailability } from "@/lib/providers";
 import type { RoomMessage, TranscriptLine, TurnLatency, VoiceStartResponse } from "@/lib/client/types";
 import { LatencyStrip } from "./LatencyStrip";
 import { Turnstile } from "./Turnstile";
-import { VuDial } from "./ui/VuDial";
+import { LevelMeter } from "./ui/LevelMeter";
 import { Switch } from "./ui/Switch";
-import { IconMic, IconMicOff, IconPhone, IconPhoneDown, IconWarn } from "./ui/icons";
+import { IconMic, IconMicOff, IconWarn } from "./ui/icons";
 
 const CONSENT_KEY = "vap.voiceConsent.v1";
 const noopSubscribe = () => () => {};
@@ -118,6 +118,7 @@ export function VoicePanel(props: {
         <RoomAudioRenderer />
         <LiveCall
           speaker={speaker}
+          subtitle={subtitle}
           contentWarning={contentWarning}
           maxSeconds={conn.maxSeconds}
           onTick={(d) => onLive({ ...d, combo: conn.combo, sessionId: conn.sessionId })}
@@ -129,76 +130,95 @@ export function VoicePanel(props: {
     );
   }
 
-  const status =
-    phase === "starting" ? "Bağlanıyor…" : phase === "ended" ? "Görüşme bitti" : !voiceReady ? "Sesli mod sunucuda yapılandırılmamış" : subtitle || "Aramaya hazır";
+  const status = phase === "starting" ? "bağlanıyor" : phase === "ended" ? "bitti" : !voiceReady ? "kapalı" : "hazır";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        <Hero speaker={speaker} status={status} contentWarning={contentWarning} />
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <Screen speaker={speaker} subtitle={subtitle} status={status} blink={phase === "starting"} contentWarning={contentWarning}>
         {lastLines.length > 0 ? (
           <Transcript speaker={speaker} lines={lastLines} turns={lastTurns} />
         ) : (
-          <p className="mx-auto max-w-[30rem] px-6 text-center text-[14px] leading-[21px] text-secondary">
-            {config.greeting ? <>Aradığınızda “{config.greeting}” diye açacak. </> : null}
-            Müşteri gibi konuşun; konuşma burada yazıya dökülür ve her cevabın kaç milisaniyede geldiği altında görünür.
-          </p>
-        )}
-      </div>
-
-      <div className="flex flex-col items-center gap-4 px-4 pb-6 pt-4">
-        {error && <Banner tone="error">{error}</Banner>}
-        {!consented && (
-          <div className="flex w-full max-w-[26rem] items-start gap-3 rounded-[12px] bg-surface-2 px-4 py-3">
-            <p className="flex-1 text-[13px] leading-[18px] text-secondary">
-              Sesiniz yazıya çevrilip yapay zekâ sağlayıcılarına iletilir; transkript birkaç gün sonra silinir. Gerçek kişisel bilgi, kart veya şifre söylemeyin.
-            </p>
-            <Switch label="Onaylıyorum" checked={consent} onChange={setConsent} />
+          <div className="max-w-[34rem] space-y-3 text-[15px] leading-[22px]">
+            {!voiceReady ? (
+              <p>Sesli mod sunucuda yapılandırılmamış: LiveKit ayarları eksik.</p>
+            ) : (
+              <>
+                {config.greeting && (
+                  <p>
+                    <span className="text-lcd-dim">açılış › </span>“{config.greeting}”
+                  </p>
+                )}
+                <p className="text-lcd-dim">Turuncu tuşa basın ve müşteri gibi konuşun. Konuşma bu ekrana yazılır; her cevabın altında ilk sesin kaç milisaniyede geldiği görünür.</p>
+              </>
+            )}
           </div>
         )}
+      </Screen>
+
+      <div className="flex flex-col items-center gap-3">
+        {error && <Notice tone="error">{error}</Notice>}
+        {!consented && (
+          <label className="plate flex w-full max-w-[30rem] items-start gap-3 px-4 py-3">
+            <span className="flex-1 text-[13px] leading-[18px] text-faint">
+              Sesim yazıya çevrilip yapay zekâ sağlayıcılarına iletilecek, transkript birkaç gün sonra silinecek. Gerçek kişisel bilgi, kart veya şifre söylemeyeceğim.
+            </span>
+            <Switch label="Onaylıyorum" checked={consent} onChange={setConsent} />
+          </label>
+        )}
         {siteKey && consented && !turnstileToken && <Turnstile siteKey={siteKey} onToken={setTurnstileToken} />}
-        <RoundButton
-          label={phase === "starting" ? "Bağlanıyor" : phase === "ended" ? "Tekrar ara" : "Ara"}
-          tone="call"
-          onClick={start}
-          disabled={!canStart}
-          pulse={canStart === true && phase === "idle"}
-        >
-          <IconPhone size={28} />
-        </RoundButton>
-        <p className="text-[12px] text-tertiary">Mikrofon izni istenir. Görüşme en fazla 3 dakika sürer.</p>
+        <TalkKey label={phase === "starting" ? "bağlanıyor" : phase === "ended" ? "tekrar ara" : "ara"} onClick={start} disabled={!canStart} />
+        <p className="text-[12px] text-faint">Mikrofon izni istenir. Görüşme en fazla 3 dakika.</p>
       </div>
     </div>
   );
 }
 
-function Hero({
+/** The LCD: bezel, glass, header line (name + status), then content. */
+function Screen({
   speaker,
+  subtitle,
   status,
+  blink,
+  live,
   contentWarning,
-  level,
-  micLevel,
-  tone,
+  meters,
+  children,
+  scrollRef,
 }: {
   speaker: string;
+  subtitle?: string;
   status: React.ReactNode;
+  blink?: boolean;
+  live?: boolean;
   contentWarning: boolean;
-  level?: number;
-  micLevel?: number;
-  tone?: "rest" | "speaking" | "listening" | "thinking";
+  meters?: React.ReactNode;
+  children: React.ReactNode;
+  scrollRef?: React.Ref<HTMLDivElement>;
 }) {
   return (
-    <div className="flex flex-col items-center px-4 pb-6 pt-8 sm:pt-12">
-      <VuDial level={level} micLevel={micLevel} tone={tone} size={240} />
-      <h2 className="mt-3 text-center text-[24px] font-bold leading-[30px] tracking-[-0.02em]">{speaker}</h2>
-      <p className="mt-0.5 text-center text-[15px] tabular-nums text-secondary" aria-live="polite">
-        {status}
-      </p>
-      {contentWarning && (
-        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-needle-soft px-2.5 py-0.5 text-[12px] font-medium text-needle-ink">
-          <IconWarn size={13} /> Argo veya sert dil içerebilir
-        </span>
-      )}
+    <div className="bezel flex min-h-[18rem] flex-1 flex-col" style={{ animation: "boot 400ms ease-out" }}>
+      <div className="lcd flex min-h-0 flex-1 flex-col">
+        <div className="flex items-start gap-4 px-5 pb-3 pt-4">
+          <div className="min-w-0 flex-1">
+            <h2 className="stamp truncate text-[22px] leading-[26px]">{speaker}</h2>
+            <p className="truncate text-[13px] text-lcd-dim">
+              {subtitle || "demo agent"}
+              {contentWarning ? ", argo içerebilir" : ""}
+            </p>
+          </div>
+          <div className="flex items-center gap-2 pt-1">
+            {live && <span className="size-2.5 rounded-full bg-signal" style={{ animation: "blink 1.2s steps(1) infinite" }} aria-hidden />}
+            <span className="lcd-num text-[22px] leading-none" style={blink ? { animation: "blink 0.9s steps(1) infinite" } : undefined}>
+              {status}
+            </span>
+          </div>
+        </div>
+        {meters && <div className="space-y-1.5 px-5 pb-3">{meters}</div>}
+        <div className="mx-5 h-px bg-lcd-ink/20" />
+        <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto px-5 py-4" aria-live="polite">
+          {children}
+        </div>
+      </div>
     </div>
   );
 }
@@ -206,23 +226,18 @@ function Hero({
 function Transcript({ speaker, lines, turns }: { speaker: string; lines: TranscriptLine[]; turns: TurnLatency[] }) {
   let agentIdx = -1;
   return (
-    <ol className="mx-auto flex max-w-[36rem] flex-col gap-2 px-4 pb-6" aria-label="Transkript">
-      {lines.map((l, i) => {
+    <ol className="space-y-3" aria-label="Transkript">
+      {lines.map((l) => {
         const isAgent = l.role === "assistant";
         if (isAgent) agentIdx++;
         const latency = isAgent ? turns[agentIdx] : undefined;
-        const firstOfRun = i === 0 || lines[i - 1].role !== l.role;
         return (
-          <li key={l.id} className={`flex flex-col ${isAgent ? "items-start" : "items-end"} ${firstOfRun && i > 0 ? "mt-2" : ""}`} style={{ animation: "rise 220ms ease-out" }}>
-            {firstOfRun && <span className="mb-0.5 px-3 text-[11px] text-secondary">{isAgent ? speaker : "Siz"}</span>}
-            <p
-              className={`max-w-[85%] whitespace-pre-wrap rounded-[18px] px-3.5 py-2 text-[15px] leading-[21px] ${
-                isAgent ? "rounded-bl-[6px] bg-fill text-label" : "rounded-br-[6px] bg-label text-surface"
-              } ${l.final ? "" : "opacity-60"}`}
-            >
-              {l.text}
-            </p>
-            {latency && <LatencyStrip latency={latency} />}
+          <li key={l.id} className="grid grid-cols-[4.2rem_minmax(0,1fr)] gap-3" style={{ animation: "rise 180ms ease-out" }}>
+            <span className="truncate pt-[3px] text-[12px] font-semibold lowercase text-lcd-dim">{isAgent ? speaker.split(" ")[0] : "siz"}</span>
+            <div>
+              <p className={`whitespace-pre-wrap text-[15.5px] leading-[22px] ${isAgent ? "font-medium" : ""} ${l.final ? "" : "opacity-60"}`}>{l.text}</p>
+              {latency && <LatencyStrip latency={latency} />}
+            </div>
           </li>
         );
       })}
@@ -230,65 +245,55 @@ function Transcript({ speaker, lines, turns }: { speaker: string; lines: Transcr
   );
 }
 
-function Banner({ tone, children }: { tone: "error" | "info"; children: React.ReactNode }) {
+function Notice({ tone, children }: { tone: "error" | "info"; children: React.ReactNode }) {
   return (
-    <p role={tone === "error" ? "alert" : "status"} className={`flex max-w-[30rem] items-start gap-2 rounded-[12px] px-3.5 py-2.5 text-[13px] leading-[18px] ${tone === "error" ? "bg-end-soft text-end" : "bg-needle-soft text-needle-ink"}`}>
+    <p
+      role={tone === "error" ? "alert" : "status"}
+      className={`flex max-w-[34rem] items-start gap-2 rounded-[8px] px-3.5 py-2.5 text-left text-[13px] leading-[18px] ${tone === "error" ? "bg-fault-soft text-fault" : "bg-signal-soft text-signal-ink"}`}
+    >
       <IconWarn size={16} className="mt-px shrink-0" />
       <span>{children}</span>
     </p>
   );
 }
 
-function RoundButton({
-  label,
-  tone,
-  onClick,
-  disabled,
-  pulse,
-  pressed,
-  children,
-}: {
-  label: string;
-  tone: "call" | "end" | "neutral";
-  onClick: () => void;
-  disabled?: boolean;
-  pulse?: boolean;
-  pressed?: boolean;
-  children: React.ReactNode;
-}) {
-  const bg = tone === "call" ? "bg-call text-white" : tone === "end" ? "bg-end text-white" : pressed ? "bg-label text-surface" : "bg-fill-strong text-label";
+/** The one saturated thing on screen: a round signal-orange key set in a recessed ring. */
+function TalkKey({ label, onClick, disabled, live }: { label: string; onClick: () => void; disabled?: boolean; live?: boolean }) {
   return (
-    <div className="flex flex-col items-center gap-1.5">
+    <div className="flex flex-col items-center gap-2">
       <button
         type="button"
         onClick={onClick}
         disabled={disabled}
         aria-label={label}
-        aria-pressed={tone === "neutral" ? pressed : undefined}
-        className={`grid size-[64px] place-items-center rounded-full ${bg} shadow-float transition-[transform,opacity] active:scale-95 disabled:opacity-35`}
-        style={pulse ? { animation: "ring 1.6s ease-out infinite" } : undefined}
+        className="grid size-[84px] place-items-center rounded-full bg-signal text-white transition-transform active:translate-y-[2px] disabled:cursor-not-allowed disabled:saturate-[0.35] disabled:opacity-70"
+        style={{
+          boxShadow:
+            "0 0 0 7px var(--well), 0 0 0 8px var(--groove-dark), inset 0 2px 0 rgb(255 255 255 / 0.35), inset 0 -4px 0 rgb(0 0 0 / 0.18), 0 3px 0 var(--key-lo)",
+        }}
       >
-        {children}
+        {live ? <span className="size-6 rounded-[4px] bg-white" /> : <IconMic size={30} />}
       </button>
-      <span className="text-[12px] text-secondary">{label}</span>
+      <span className="text-[13px] font-semibold lowercase">{label}</span>
     </div>
   );
 }
 
 const STATE_LABEL: Record<string, string> = {
-  connecting: "Bağlanıyor",
-  initializing: "Agent hazırlanıyor",
-  "pre-connect-buffering": "Agent hazırlanıyor",
-  listening: "Dinliyor",
-  thinking: "Düşünüyor",
-  speaking: "Konuşuyor",
-  idle: "Bekliyor",
-  disconnected: "Bağlantı kapandı",
-  failed: "Bağlantı kurulamadı",
+  connecting: "bağlanıyor",
+  initializing: "hazırlanıyor",
+  "pre-connect-buffering": "hazırlanıyor",
+  listening: "dinliyor",
+  thinking: "düşünüyor",
+  speaking: "konuşuyor",
+  idle: "bekliyor",
+  disconnected: "kapandı",
+  failed: "hata",
 };
 
 function LiveCall({
   speaker,
+  subtitle,
   contentWarning,
   maxSeconds,
   onTick,
@@ -297,6 +302,7 @@ function LiveCall({
   error,
 }: {
   speaker: string;
+  subtitle?: string;
   contentWarning: boolean;
   maxSeconds: number;
   onTick: (d: { lines: TranscriptLine[]; turns: TurnLatency[]; elapsed: number }) => void;
@@ -374,36 +380,48 @@ function LiveCall({
 
   const remaining = Math.max(0, maxSeconds - elapsed);
   const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
-  const tone = state === "speaking" ? "speaking" : state === "listening" ? "listening" : state === "thinking" ? "thinking" : "rest";
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
-        <Hero
-          speaker={speaker}
-          contentWarning={contentWarning}
-          level={state === "speaking" ? agentLevel : 0}
-          micLevel={isMicrophoneEnabled ? micLevel : 0}
-          tone={tone}
-          status={
-            <>
-              {STATE_LABEL[state] ?? state}
-              <span className="mx-1.5 text-tertiary">·</span>
-              <span title="Kalan süre">{mmss(remaining)}</span>
-            </>
-          }
-        />
-        <Transcript speaker={speaker} lines={lines} turns={turns} />
-      </div>
-      <div className="flex flex-col items-center gap-4 px-4 pb-6 pt-4">
-        {(error || notice) && <Banner tone={error ? "error" : "info"}>{error ?? notice}</Banner>}
-        <div className="flex items-start gap-10">
-          <RoundButton label={isMicrophoneEnabled ? "Sessize al" : "Sesi aç"} tone="neutral" pressed={!isMicrophoneEnabled} onClick={() => localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}>
-            {isMicrophoneEnabled ? <IconMic size={26} /> : <IconMicOff size={26} />}
-          </RoundButton>
-          <RoundButton label="Bitir" tone="end" onClick={end}>
-            <IconPhoneDown size={30} />
-          </RoundButton>
+    <div className="flex min-h-0 flex-1 flex-col gap-4">
+      <Screen
+        speaker={speaker}
+        subtitle={subtitle}
+        contentWarning={contentWarning}
+        live
+        scrollRef={scroller}
+        status={
+          <>
+            <span className="mr-3 text-[16px]">{STATE_LABEL[state] ?? state}</span>
+            <span title="Kalan süre">{mmss(remaining)}</span>
+          </>
+        }
+        meters={
+          <>
+            <LevelMeter label="agent" level={state === "speaking" ? agentLevel : 0} />
+            <LevelMeter label="siz" level={isMicrophoneEnabled ? micLevel : 0} />
+          </>
+        }
+      >
+        {lines.length === 0 ? <p className="text-lcd-dim">Agent hazırlanıyor, birazdan konuşmaya başlayacak…</p> : <Transcript speaker={speaker} lines={lines} turns={turns} />}
+      </Screen>
+
+      <div className="flex flex-col items-center gap-3">
+        {(error || notice) && <Notice tone={error ? "error" : "info"}>{error ?? notice}</Notice>}
+        <div className="flex items-start gap-8">
+          <div className="flex flex-col items-center gap-2 pt-5">
+            <button
+              type="button"
+              className="key size-[52px] rounded-full"
+              aria-pressed={!isMicrophoneEnabled}
+              aria-label={isMicrophoneEnabled ? "Sessize al" : "Mikrofonu aç"}
+              onClick={() => localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}
+            >
+              {isMicrophoneEnabled ? <IconMic size={22} /> : <IconMicOff size={22} />}
+            </button>
+            <span className="text-[12px] lowercase text-faint">{isMicrophoneEnabled ? "sessiz" : "sesi aç"}</span>
+          </div>
+          <TalkKey label="bitir" onClick={end} live />
+          <div className="w-[52px]" aria-hidden />
         </div>
       </div>
     </div>

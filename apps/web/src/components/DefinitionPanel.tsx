@@ -47,6 +47,7 @@ export function DefinitionSection({
 
   return (
     <div className="mx-auto w-full max-w-[640px] space-y-7 px-4 py-6 sm:px-6 sm:py-8">
+      <h2 className="stamp px-1 text-[26px] leading-none">{SECTION_TITLES[section].toLocaleLowerCase("tr")}</h2>
       {section === "task" && (
         <>
           <Group title="Agent">
@@ -74,7 +75,8 @@ export function DefinitionSection({
                   key={t}
                   type="button"
                   onClick={() => set((d) => void (d.persona.tone = t))}
-                  className={`rounded-full px-3 py-1 text-[13px] font-medium transition-colors ${config.persona.tone === t ? "bg-label text-surface" : "bg-fill text-label hover:bg-fill-strong"}`}
+                  aria-pressed={config.persona.tone === t}
+                  className="key px-3 py-1 text-[13px]"
                 >
                   {t}
                 </button>
@@ -191,8 +193,8 @@ export function Group({ title, foot, action, children }: { title?: string; foot?
   return (
     <section>
       {(title || action) && (
-        <div className="mb-1.5 flex items-baseline justify-between px-4">
-          {title && <h3 className="text-[13px] font-medium text-secondary">{title}</h3>}
+        <div className="mb-1.5 flex items-baseline justify-between px-1">
+          {title && <h3 className="text-[13px] font-semibold lowercase text-faint">{title}</h3>}
           {action}
         </div>
       )}

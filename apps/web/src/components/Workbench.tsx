@@ -10,7 +10,7 @@ import { DefinitionSection, SECTION_TITLES, sample, type Section } from "./Defin
 import { VoicePanel, type CallResult } from "./VoicePanel";
 import { InspectPanel, type CallView } from "./InspectPanel";
 import { AppMark } from "./SiteHeader";
-import { IconBolt, IconBook, IconPersona, IconPhone, IconShare, IconSidebarRight, IconSliders, IconTask, IconWave } from "./ui/icons";
+import { IconShare, IconSidebarRight } from "./ui/icons";
 
 type View = "call" | "inspect" | Section;
 
@@ -19,14 +19,7 @@ interface SaveState {
   message?: string;
 }
 
-const NAV: { id: Section; icon: (p: { size?: number }) => React.ReactNode; tint: string }[] = [
-  { id: "task", icon: IconTask, tint: "#5b7cfa" },
-  { id: "persona", icon: IconPersona, tint: "#e5609a" },
-  { id: "knowledge", icon: IconBook, tint: "#2fa86a" },
-  { id: "actions", icon: IconBolt, tint: "#e8a419" },
-  { id: "models", icon: IconWave, tint: "#8e6cf0" },
-  { id: "advanced", icon: IconSliders, tint: "#8e8e93" },
-];
+const NAV: { id: Section }[] = [{ id: "task" }, { id: "persona" }, { id: "knowledge" }, { id: "actions" }, { id: "models" }, { id: "advanced" }];
 
 export function Workbench({
   agent: initialAgent,
@@ -145,153 +138,139 @@ export function Workbench({
 
   const pills: { id: View; label: string }[] =
     mode === "edit"
-      ? [{ id: "call", label: "Görüşme" }, ...NAV.map((n) => ({ id: n.id as View, label: SECTION_TITLES[n.id] })), { id: "inspect", label: "Ölçümler" }]
+      ? [{ id: "call", label: "görüşme" }, ...NAV.map((n) => ({ id: n.id as View, label: SECTION_TITLES[n.id].toLocaleLowerCase("tr") })), { id: "inspect", label: "ölçümler" }]
       : [
-          { id: "call", label: "Görüşme" },
-          { id: "inspect", label: "Ölçümler" },
+          { id: "call", label: "görüşme" },
+          { id: "inspect", label: "ölçümler" },
         ];
 
   return (
-    <div className="flex h-dvh bg-window lg:p-3">
-      <div className="flex min-h-0 min-w-0 flex-1 overflow-hidden bg-surface lg:rounded-[12px] lg:shadow-window">
+    <div className="flex min-h-dvh flex-col bg-body lg:h-dvh">
+      <header className="flex h-14 shrink-0 items-center gap-3 px-4 sm:px-5">
+        <Link href="/" aria-label="Ana sayfa" className="rounded-[6px]">
+          <AppMark size={24} />
+        </Link>
+        <div className="min-w-0 flex-1 leading-tight">
+          <h1 className="stamp truncate text-[16px]">{title}</h1>
+          <p className={`truncate text-[12px] ${dirty && !isSection ? "text-signal-ink" : "text-faint"}`}>{sub}</p>
+        </div>
+        {toolbarExtra}
+        {mode === "edit" && agent && <ShareButton agent={agent} />}
         {mode === "edit" && (
-          <aside className="hidden w-[228px] shrink-0 flex-col border-r border-separator bg-sidebar backdrop-blur-2xl backdrop-saturate-150 md:flex" aria-label="Gezinme">
-            <Link href="/" className="flex h-[52px] items-center gap-2 px-4 text-[13px] font-semibold text-secondary hover:text-label">
-              <AppMark />
-              Voice Agent Playground
-            </Link>
-            <nav className="flex-1 overflow-y-auto px-2.5 pb-3">
-              <SideItem active={view === "call"} onClick={() => setView("call")} icon={<IconPhone size={13} />} tint="#30b158" badge={live ? <span className="size-2 rounded-full bg-end" aria-label="canlı" /> : null}>
-                Görüşme
-              </SideItem>
-              <p className="mb-1 mt-4 px-2.5 text-[11px] font-semibold text-tertiary">Tanım</p>
-              {NAV.map((n) => (
-                <SideItem
-                  key={n.id}
-                  active={view === n.id}
-                  onClick={() => setView(n.id)}
-                  icon={<n.icon size={13} />}
-                  tint={n.tint}
-                  badge={n.id === "actions" && config.actions.length ? <span className="text-[12px] text-tertiary">{config.actions.length}</span> : null}
-                >
-                  {SECTION_TITLES[n.id]}
-                </SideItem>
-              ))}
-            </nav>
-          </aside>
+          <button className={!dirty && agent ? "btn-text" : "btn-primary lowercase"} onClick={() => persist()} disabled={save.status === "saving" || (!dirty && !!agent)}>
+            {save.status === "saving" ? "kontrol ediliyor…" : !agent || dirty ? "kaydet" : "kaydedildi"}
+          </button>
         )}
+        {view === "call" && (
+          <button
+            className="btn-text hidden px-1.5 xl:inline-flex"
+            onClick={() => setInspectorOpen((o) => !o)}
+            aria-pressed={inspectorOpen}
+            aria-label="Model ve ölçüm rafını aç/kapat"
+            title="Model ve ölçüm rafı"
+          >
+            <IconSidebarRight size={19} />
+          </button>
+        )}
+      </header>
 
-        <div className="flex min-w-0 flex-1 flex-col">
-          {/* unified toolbar */}
-          <header className="flex h-[52px] shrink-0 items-center gap-3 border-b border-separator bg-surface/80 px-4 backdrop-blur-xl">
-            {mode === "shared" && (
-              <Link href="/" aria-label="Ana sayfa">
-                <AppMark size={24} />
-              </Link>
-            )}
-            {mode === "edit" && (
-              <Link href="/" aria-label="Ana sayfa" className="md:hidden">
-                <AppMark size={24} />
-              </Link>
-            )}
-            <div className="min-w-0 flex-1 leading-tight">
-              <h1 className="truncate text-[15px] font-semibold">{title}</h1>
-              <p className={`truncate text-[12px] ${dirty && !isSection ? "text-needle-ink" : "text-secondary"}`}>{sub}</p>
-            </div>
-            {toolbarExtra}
-            {mode === "edit" && agent && <ShareButton agent={agent} />}
-            {mode === "edit" && (
-              <button className={!dirty && agent ? "btn-text" : "btn-primary"} onClick={() => persist()} disabled={save.status === "saving" || (!dirty && !!agent)}>
-                {save.status === "saving" ? "Kontrol ediliyor…" : !agent || dirty ? "Kaydet" : "Kaydedildi"}
-              </button>
-            )}
-            {view === "call" && (
-              <button
-                className="btn-text hidden px-1.5 xl:inline-flex"
-                onClick={() => setInspectorOpen((o) => !o)}
-                aria-pressed={inspectorOpen}
-                aria-label="Ölçüm panelini aç/kapat"
-                title="Ölçüm paneli"
-              >
-                <IconSidebarRight size={19} />
-              </button>
-            )}
-          </header>
+      {save.status === "error" && (
+        <div role="alert" className="mx-3 mb-2 flex items-start gap-2 rounded-[8px] bg-fault-soft px-4 py-2.5 text-[13px] leading-[18px] sm:mx-5">
+          <span className="font-semibold text-fault">Kaydedilmedi.</span>
+          <span>{save.message}</span>
+          <button className="btn-text ml-auto py-0 text-[12px]" onClick={() => setSave({ status: "idle" })}>
+            kapat
+          </button>
+        </div>
+      )}
 
-          {/* compact navigation on narrow screens */}
-          <nav className={`flex shrink-0 gap-1.5 overflow-x-auto border-b border-separator px-3 py-2 ${mode === "edit" ? "md:hidden" : "xl:hidden"}`} aria-label="Bölüm">
-            {pills.map((p) => (
-              <button
-                key={p.id}
-                onClick={() => setView(p.id)}
-                aria-pressed={view === p.id}
-                className={`shrink-0 rounded-full px-3 py-1 text-[13px] font-medium ${view === p.id ? "bg-label text-surface" : "bg-fill text-label"}`}
-              >
-                {p.label}
-              </button>
+      {/* key strip on narrow screens */}
+      <nav className={`flex shrink-0 gap-2 overflow-x-auto px-3 pb-3 pt-1 sm:px-5 ${mode === "edit" ? "lg:hidden" : "xl:hidden"}`} aria-label="Bölüm">
+        {pills.map((p) => (
+          <button key={p.id} onClick={() => setView(p.id)} aria-pressed={view === p.id} className="key shrink-0 px-3 py-1.5 text-[13px] lowercase">
+            {p.id === "call" && live && <span className="size-2 rounded-full bg-signal" aria-hidden />}
+            {p.label}
+          </button>
+        ))}
+      </nav>
+
+      <div
+        className={`grid min-h-0 flex-1 grid-cols-1 gap-4 px-3 pb-3 sm:px-5 sm:pb-5 [&>*]:min-w-0 ${
+          mode === "edit"
+            ? view === "call" && inspectorOpen
+              ? "lg:grid-cols-[150px_minmax(0,1fr)] xl:grid-cols-[150px_minmax(0,1fr)_320px]"
+              : "lg:grid-cols-[150px_minmax(0,1fr)]"
+            : view === "call" && inspectorOpen
+              ? "xl:grid-cols-[minmax(0,1fr)_340px]"
+              : ""
+        }`}
+      >
+        {mode === "edit" && (
+          <nav className="hidden flex-col gap-2 lg:flex" aria-label="Bölümler">
+            <KeyButton active={view === "call"} onClick={() => setView("call")} dot={live}>
+              görüşme
+            </KeyButton>
+            <span className="groove my-2 h-[2px]" aria-hidden />
+            {NAV.map((n) => (
+              <KeyButton key={n.id} active={view === n.id} onClick={() => setView(n.id)} badge={n.id === "actions" && config.actions.length ? String(config.actions.length) : undefined}>
+                {SECTION_TITLES[n.id].toLocaleLowerCase("tr")}
+              </KeyButton>
             ))}
           </nav>
+        )}
 
-          {save.status === "error" && (
-            <div role="alert" className="flex items-start gap-2 border-b border-separator bg-end-soft px-4 py-2.5 text-[13px] leading-[18px]">
-              <span className="font-semibold text-end">Kaydedilmedi.</span>
-              <span className="text-label">{save.message}</span>
-              <button className="btn-text ml-auto py-0 text-[12px]" onClick={() => setSave({ status: "idle" })}>
-                Kapat
-              </button>
-            </div>
-          )}
-
-          <div className="flex min-h-0 flex-1">
-            {/* The call stays mounted while you edit, so a running call isn't dropped. */}
-            <main className={`${view === "call" ? "flex" : "hidden"} min-w-0 flex-1 flex-col`}>
-              <VoicePanel
-                config={config}
-                agentId={agent?.id ?? null}
-                ensureSaved={ensureSaved}
-                providers={providers}
-                providerOverride={override}
-                contentWarning={agent?.contentWarning ?? false}
-                subtitle={subtitle}
-                onLive={onLive}
-                onEnded={onEnded}
-              />
-            </main>
-            {isSection && (
-              <main className="min-w-0 flex-1 overflow-y-auto bg-window">
-                <DefinitionSection section={view as Section} config={config} onChange={(c) => {
-                  setConfig(c);
-                  if (JSON.stringify(c.providers) !== JSON.stringify(config.providers)) setNextCombo(c.providers);
-                }} providers={providers} />
-              </main>
-            )}
-            <aside
-              className={`${view === "inspect" ? "flex flex-1" : view === "call" && inspectorOpen ? "hidden xl:flex xl:w-[300px] xl:flex-none" : "hidden"} min-h-0 flex-col overflow-y-auto border-l border-separator bg-surface-2`}
-              aria-label="Ölçümler"
-            >
-              <div className={view === "inspect" ? "mx-auto w-full max-w-[520px]" : ""}>
-                <InspectPanel call={call} providers={providers} agentName={config.name} nextCombo={nextCombo} onNextCombo={setNextCombo} language={config.persona.language} sampleText={sample(config)} />
-              </div>
-            </aside>
-          </div>
-        </div>
+        {/* The call stays mounted while you edit, so a running call isn't dropped. */}
+        <main className={`${view === "call" ? "flex" : "hidden"} min-h-[32rem] min-w-0 flex-col`}>
+          <VoicePanel
+            config={config}
+            agentId={agent?.id ?? null}
+            ensureSaved={ensureSaved}
+            providers={providers}
+            providerOverride={override}
+            contentWarning={agent?.contentWarning ?? false}
+            subtitle={subtitle}
+            onLive={onLive}
+            onEnded={onEnded}
+          />
+        </main>
+        {isSection && (
+          <main className="well min-w-0 overflow-y-auto rounded-[12px]">
+            <DefinitionSection
+              section={view as Section}
+              config={config}
+              onChange={(c) => {
+                setConfig(c);
+                if (JSON.stringify(c.providers) !== JSON.stringify(config.providers)) setNextCombo(c.providers);
+              }}
+              providers={providers}
+            />
+          </main>
+        )}
+        <aside
+          className={`${view === "inspect" ? "block" : view === "call" && inspectorOpen ? "hidden xl:block" : "hidden"} plate min-h-0 overflow-y-auto`}
+          aria-label="Model ve ölçüm rafı"
+        >
+          <InspectPanel
+            call={call}
+            providers={providers}
+            agentName={config.name}
+            nextCombo={nextCombo}
+            onNextCombo={setNextCombo}
+            language={config.persona.language}
+            sampleText={sample(config)}
+          />
+        </aside>
       </div>
     </div>
   );
 }
 
-function SideItem({ active, onClick, icon, tint, badge, children }: { active: boolean; onClick: () => void; icon: React.ReactNode; tint: string; badge?: React.ReactNode; children: React.ReactNode }) {
+function KeyButton({ active, onClick, dot, badge, children }: { active: boolean; onClick: () => void; dot?: boolean; badge?: string; children: React.ReactNode }) {
   return (
-    <button
-      onClick={onClick}
-      aria-current={active ? "page" : undefined}
-      className={`flex w-full items-center gap-2.5 rounded-[7px] px-2.5 py-[5px] text-left text-[14px] transition-colors ${active ? "bg-fill-strong font-medium" : "hover:bg-fill"}`}
-    >
-      <span className="grid size-[22px] place-items-center rounded-[6px] text-white" style={{ background: tint }}>
-        {icon}
-      </span>
+    <button onClick={onClick} aria-current={active ? "page" : undefined} className="key w-full justify-start px-3 py-2.5 text-left text-[14px]">
+      <span className={`size-2 shrink-0 rounded-full ${dot ? "bg-signal" : active ? "bg-engrave" : "bg-dim/50"}`} style={dot ? { animation: "blink 1.2s steps(1) infinite" } : undefined} aria-hidden />
       <span className="flex-1">{children}</span>
-      {badge}
+      {badge && <span className="text-[12px] font-medium text-faint">{badge}</span>}
     </button>
   );
 }

@@ -1,62 +1,66 @@
-# Design plan v2: "native app" (frontend-design skill)
+# Design plan v3: "the field recorder" (frontend-design skill)
 
-v1 (light desk + flat panels) was rejected by the client as "too flat, too panel-like". The brief for v2: **feel like a native app**, same features.
+History: v1 (flat panels) was "too flat, too panel-like"; v2 (macOS clone: blurred sidebar, coloured icon squares, grey grouped lists, green round call button) was "still AI slop". The lesson: v2 borrowed someone else's identity wholesale. v3 takes its identity from the subject.
 
-**Subject:** a voice test bench. A freelancer defines an agent for a prospective client, calls it, reads what happened, sends a link.
-**Audience:** the builder (wants control and numbers) and the client opening a shared link (wants to talk to "their" agent).
-**Primary job:** call the agent. Everything else (definition, metrics) supports the call.
-
-## Direction
-
-Borrow the vernacular of macOS/iOS apps people already trust, instead of web-dashboard chrome:
-- A **window** with a translucent sidebar (vibrancy), a unified toolbar and a content area. Not three equal boxes.
-- Definition as **inset grouped lists** (System Settings): rounded groups, rows with the label on the left and the control on the right, hairline separators *inside* groups, footnotes under groups.
-- The call screen borrows from **FaceTime/Phone**: large centred subject, round green "call" and red "end" buttons, live captions as message bubbles.
-- An **inspector** (right sidebar, like Xcode/Keynote) for metrics, model choice and the request log.
-- A **welcome window** (Xcode / Final Cut "Welcome") instead of a landing page.
-- Light and dark appearance follow the system.
+**Subject:** you pick up a device, talk to an agent, and read the numbers. That is what a field recorder / handheld radio does. The product is an **instrument**, not a dashboard.
+**Audience:** the freelancer tuning an agent, and the client who receives a link and just presses "talk".
+**Primary job:** press and talk; then read latency and cost off the display.
 
 ## Tokens
 
 | Name | Light | Dark | Role |
 |---|---|---|---|
-| Window | `#ECECEF` | `#1C1C1E` | Behind everything |
-| Sidebar | `rgba(232,232,237,.72)` + blur | `rgba(44,44,46,.72)` + blur | Vibrancy material |
-| Surface | `#FFFFFF` | `#2C2C2E` | Grouped rows, content |
-| Label | `#1D1D1F` | `#F5F5F7` | Primary text |
-| Secondary | `#6E6E73` | `#98989D` | Secondary text |
-| Separator | `rgba(60,60,67,.14)` | `rgba(84,84,88,.6)` | Hairlines inside groups |
-| Needle | `#F0A020` | `#FFB340` | The one brand accent: the VU needle, LLM segment, selection |
-| Call / End | `#30B158` / `#FF3B30` | same | Phone vernacular |
+| Body | `#D7D9D5` | `#2B2D2A` | Anodised aluminium; the page itself is the device chassis |
+| Plate | `#E6E8E4` | `#353733` | Raised module plates |
+| Well | `#C9CCC7` | `#20221F` | Recessed areas: inputs, key wells |
+| Engrave | `#2E322D` | `#E2E5DF` | Text, "engraved" labels |
+| Faint | `#6C716A` | `#9AA096` | Secondary labels |
+| LCD | `#B9C29A` → `#A9B387` | `#8F9B6C` → `#7F8B5C` | Reflective LCD glass (olive-yellow, not a black screen) |
+| LCD ink | `#28301F` | same | Segments and transcript text on the LCD |
+| Signal | `#FF4F1A` | `#FF5D2B` | The one colour: the talk key, the record dot, the LLM latency segment |
 
-**Type:** the platform's own UI face (SF Pro on Apple, Segoe UI Variable on Windows, Roboto on Android) with Schibsted Grotesk as the web fallback; the system face *is* the deliberate choice for a "native" brief. Sizes follow Apple's text styles: large title 26/32 bold, title 17 semibold, body 15, footnote 13, caption 12. Monospace (SF Mono / Plex Mono) only for JSON and numbers in the inspector.
+Explicitly not: cream + serif, black + neon, cards with one soft shadow.
+
+**Type:**
+- **Archivo** (variable width): UI text at 100 width; agent names and headings at 112–125 width, so they read like stamped product names.
+- **Doto** (dot matrix): only for numbers and status on the LCD (timer, milliseconds, cost), where a segment display is the real vernacular.
+- Labels are **lowercase** like engraved hardware legends ("stt", "llm", "ses", "kaydet"), never all caps. Sentence case everywhere else.
 
 ## Layout
 
+The whole viewport is the chassis. Modules sit on it with screws-free plates, separated by milled grooves (a 1px shade line + 1px highlight line), not by shadows.
+
 ```
-┌──────────────── window ────────────────────────────────────────────────┐
-│ ● ● ●  sidebar (blur)  │ toolbar: Resepsiyonist ▸ Görüşme   [Paylaş][Kaydet]│
-│ ◉ Görüşme              │                                   │ Inspector    │
-│ ─ Tanım                │        ╭──── VU dial ────╮        │ Son görüşme  │
-│   Görev                │        │   needle swings │        │ 820 ms  1:42 │
-│   Kişilik              │        ╰─────────────────╯        │ Modeller     │
-│   Bilgi                │       Resepsiyonist · Dinliyor    │ İstek logu   │
-│   İşlemler             │  [bubble: agent]                  │              │
-│   Modeller             │                  [bubble: you]    │              │
-│   Gelişmiş             │        ( ● )  mute   ( ✕ )        │              │
+┌ chassis ───────────────────────────────────────────────────────────────┐
+│ ◖vap  resepsiyonist ─ makas saç            [kaydet] [paylaş]            │
+│ ┌ keys ┐ ┌──────── LCD ─────────────────────────┐ ┌ rack ───────────┐ │
+│ │görüşme│ │ RESEPSIYONIST            ● 02:41    │ │ stt  deepgram ▾ │ │
+│ │görev  │ │ ▮▮▮▮▮▮▯▯▯▯ level                     │ │ llm  gpt mini ▾ │ │
+│ │kişilik│ │ > agent: Merhaba, hoş geldiniz…     │ │ tts  cartesia ▾ │ │
+│ │bilgi  │ │ < siz:   yarın 3'e yer var mı?      │ │ ses  marin    › │ │
+│ │işlem  │ │   ▏820ms▕ eou 310 llm 280 tts 230   │ │ ─────────────── │ │
+│ │modeller│└──────────────────────────────────────┘ │ ilk ses  820 ms │ │
+│ │gelişmiş│     (( TALK ))   [sessiz]  [bitir]     │ maliyet  $0.012 │ │
+│ └───────┘                                        └─────────────────┘ │
 └────────────────────────────────────────────────────────────────────────┘
 ```
 
-Phone: sidebar becomes a scrollable pill bar under a compact toolbar; the inspector moves below the call.
+- Left: a column of **physical keys** (raised; pressed = sunk into the well).
+- Centre: the **LCD** is the call screen. The transcript is printed on it in LCD ink; numbers are in dot matrix; a segmented level meter replaces the needle dial.
+- Below the LCD: one large round **Signal-orange talk key** with a raised rim. It's the only saturated thing on the screen.
+- Right: the **rack**: model selection as rows of recessed selectors, and the readouts.
+- Definition sections replace the LCD area with a "paper insert": a plate with recessed fields.
+- Welcome page: the device, powered off, with the template list as its preset buttons.
+- Phone: the keys become a horizontal key strip; the rack drops below the talk key.
 
 ## The one bold thing
 
-**The VU dial.** A round meter on the call screen whose needle swings with the agent's voice level in real time (and a soft inner ring that follows *your* mic level). It is the product's mark come alive and replaces the generic glowing "AI orb". The needle colour says who is talking: amber when the agent speaks, green when it listens to you. Everything else stays quiet and system-like.
+**The reflective LCD.** An olive glass panel with a faint pixel grid, dark ink, dot-matrix numerals and a segmented level meter driven by the agent's voice. It is immediately "a device" and nothing like a chat app or a dashboard. Everything around it is quiet aluminium.
 
 ## Review against generic defaults
 
-- Glowing gradient orb for voice → rejected (every voice demo uses it); replaced by the VU dial tied to the brand mark.
-- Three equal rounded panels (v1) → a window with sidebar + content + inspector, different materials for each.
-- SaaS card kit (same radius + same shadow everywhere) → radius hierarchy: window 12, groups 10, controls 7, buttons round; shadows only on the window and floating call controls.
-- Middle-dot meta strings in chrome → used only where Apple itself does (subtitle under the agent name), nowhere else.
-- All-caps eyebrows → group headers are sentence case footnote-size text, as in System Settings.
+- v2's coloured icon squares, blurred sidebar and macOS grouped lists → removed; navigation is engraved keys.
+- Green/red round phone buttons → one orange talk key; "end" is a plain engraved key.
+- Mono for small labels → mono-like type only on the LCD where it is the real display vernacular.
+- Shadows → bevels only on keys (1px highlight top, 1px shade bottom); plates are separated by grooves.
+- Gradients → only inside the LCD glass, because real LCD glass has one.

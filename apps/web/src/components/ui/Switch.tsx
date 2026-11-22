@@ -1,6 +1,6 @@
 "use client";
 
-/** iOS-style switch. */
+/** Hardware slide switch: a recessed track with a raised knob; orange when on. */
 export function Switch({ checked, onChange, label, id }: { checked: boolean; onChange: (v: boolean) => void; label: string; id?: string }) {
   return (
     <button
@@ -10,10 +10,11 @@ export function Switch({ checked, onChange, label, id }: { checked: boolean; onC
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative h-[26px] w-[44px] shrink-0 rounded-full transition-colors ${checked ? "bg-call" : "bg-fill-strong"}`}
+      className="well relative h-[24px] w-[46px] shrink-0 rounded-[6px]"
     >
       <span
-        className={`absolute left-0 top-[2px] size-[22px] rounded-full bg-white shadow-[0_1px_3px_rgb(0_0_0/0.3)] transition-transform ${checked ? "translate-x-[20px]" : "translate-x-[2px]"}`}
+        className={`absolute left-0 top-[3px] h-[18px] w-[20px] rounded-[4px] transition-transform ${checked ? "translate-x-[23px] bg-signal" : "translate-x-[3px] bg-plate"}`}
+        style={{ boxShadow: "0 0 0 1px var(--groove-dark), inset 0 1px 0 var(--key-hi), 0 1px 0 var(--key-lo)" }}
       />
     </button>
   );

@@ -122,8 +122,8 @@ export function VoicePickerSheet({
       >
         <header className="flex items-center gap-3 border-b border-separator bg-surface px-4 py-3">
           <div className="min-w-0 flex-1">
-            <h2 id="voice-title" className="text-[16px] font-semibold">
-              Ses seç
+            <h2 id="voice-title" className="stamp text-[17px] lowercase">
+              ses seç
             </h2>
             <p className="truncate text-[12px] text-secondary">
               {ttsLabel}

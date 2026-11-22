@@ -35,7 +35,7 @@ export function SelectRow({ id, label, value, options, onChange }: { id: string;
 
 export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string][]; onChange: (v: T) => void; label: string }) {
   return (
-    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-[9px] bg-fill p-0.5">
+    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-2">
       {options.map(([v, l]) => (
         <button
           key={v}
@@ -43,9 +43,7 @@ export function Segmented<T extends string>({ value, options, onChange, label }:
           role="radio"
           aria-checked={value === v}
           onClick={() => onChange(v)}
-          className={`rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors ${
-            value === v ? "bg-surface text-label shadow-[0_1px_3px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.04)]" : "text-secondary hover:text-label"
-          }`}
+          className="key px-3 py-1.5 text-[13px] lowercase"
         >
           {l}
         </button>
@@ -77,7 +75,7 @@ export function ModelPicker({
 }) {
   const [voiceSheet, setVoiceSheet] = useState(false);
   const L = compact
-    ? { pipeline: "Pipeline", stt: "STT", llm: "LLM", tts: "TTS", voice: "Ses", rt: "Model" }
+    ? { pipeline: "pipeline", stt: "stt", llm: "llm", tts: "tts", voice: "ses", rt: "model" }
     : { pipeline: "STT → LLM → TTS", stt: "Yazıya çevirme", llm: "Dil modeli", tts: "Seslendirme", voice: "Ses", rt: "Realtime model" };
   const set = (patch: Partial<ProviderSelection>) => onChange({ ...value, ...patch });
   const tts = providers.tts.find((t) => t.id === value.tts);

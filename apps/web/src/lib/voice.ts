@@ -28,6 +28,7 @@ export type VoiceCombo = {
   llm: string;
   tts: string;
   voice: string;
+  voice_label?: string;
   realtime: string;
 };
 
@@ -49,8 +50,11 @@ export function resolveCombo(config: AgentConfig, override: Partial<ProviderSele
   const tts = okIn(avail.tts, p.tts) ? p.tts : firstOk(avail.tts);
   if (!stt || !llm || !tts) throw new ApiError(503, "Ses için gerekli STT, LLM veya TTS sağlayıcısı yapılandırılmamış.");
   const ttsModel = findTts(tts)!;
-  const voice = ttsModel.voices.some((v) => v.id === p.voice) || (p.voice && tts === p.tts) ? p.voice : ttsModel.voices[0].id;
-  return { mode: "pipeline", stt, llm, tts, voice, realtime: "" };
+  // Any voice ID from the provider's library is allowed as long as it belongs to the chosen TTS.
+  const keep = Boolean(p.voice) && tts === p.tts;
+  const voice = keep ? p.voice : ttsModel.voices[0].id;
+  const voice_label = keep ? (ttsModel.voices.find((v) => v.id === p.voice)?.label ?? p.voice_label) : ttsModel.voices[0].label;
+  return { mode: "pipeline", stt, llm, tts, voice, voice_label, realtime: "" };
 }
 
 function isPremium(c: VoiceCombo) {

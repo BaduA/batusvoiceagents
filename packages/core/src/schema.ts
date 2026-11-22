@@ -45,6 +45,8 @@ export const pipelineProvidersSchema = z.object({
   llm: z.string().default("openai:gpt-5.4-mini"),
   tts: z.string().default("cartesia:sonic-3"),
   voice: z.string().default(""),
+  /** Display name of the chosen voice (voices can come from a provider API, not only the catalog). */
+  voice_label: z.string().max(120).optional(),
   realtime: z.string().default("openai:gpt-realtime-2.1-mini"),
 });
 export type ProviderSelection = z.infer<typeof pipelineProvidersSchema>;

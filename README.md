@@ -78,7 +78,7 @@ Geliştirme için `DEV_MOCK_LLM=1`: Task Guard sınıflandırıcısı sahte bir 
 | `CRON_SECRET` | `GET /api/cron/cleanup` için `Authorization: Bearer …`. Günlük çalıştır (Vercel Cron vb.). |
 | `DAILY_SESSIONS_PER_IP`, `DAILY_PREMIUM_SESSIONS_PER_IP` | Günlük görüşme limiti (20 / büyük modellerde 3). |
 | `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `GOOGLE_GENERATIVE_AI_API_KEY` | Web: en az biri (Task Guard sınıflandırıcısı). Worker: o modelleri kendi anahtarınla çalıştırmak için. |
-| `DEEPGRAM_API_KEY`, `CARTESIA_API_KEY`, `ELEVENLABS_API_KEY` | İsteğe bağlı; yoksa LiveKit Inference. |
+| `DEEPGRAM_API_KEY`, `CARTESIA_API_KEY`, `ELEVENLABS_API_KEY` | İsteğe bağlı; yoksa LiveKit Inference. Web'de de tanımlıysa ses kütüphanesi canlı listelenir ve sesler önizlenebilir (önizleme IP başına saatte 30). |
 | Worker: `WEB_BASE_URL`, `TURN_DETECTION` | Web adresi; `multilingual` (önerilen) / `vad` / `stt`. |
 
 > **Harcama limiti:** Her sağlayıcının (ve LiveKit'in) panelinde aylık harcama limitini ayrıca ayarla. Uygulama içi limitler yalnızca ilk savunma hattıdır.
@@ -111,7 +111,7 @@ Fiyatlar tek dosyada (`catalog.ts`) durur; "estimate — verify" notlu olanları
 - [x] Config modeli, builder formu, 5 şablon, config → system prompt, ham JSON/prompt düzenleme, paylaşım linki.
 - [x] Task Guard (4 katman), sabit güvenlik bloğu, log maskeleme, IP başına günlük limit (büyük modellere daha sıkı), admin modu, KVKK temizliği.
 - [x] **Sesli görüşme:** LiveKit worker, STT → LLM → TTS ve realtime modu, çok dilli turn detection, önden üretim, KVKK onayı + Turnstile, süre limiti, canlı transkript, katman bazlı gecikme şeridi, maliyet tahmini, "başka modellerle dene".
-- [ ] Ses önizleme butonu ve sağlayıcı API'sinden ses listesi.
+- [x] Ses seçici: ElevenLabs ve Cartesia kütüphanesi sağlayıcı API'sinden canlı listelenir (kendi anahtarla), OpenAI'nin 13 sesi, dile göre filtre, dinleme butonu, herhangi bir ses kimliğini yapıştırma.
 - [ ] İşlem düzenleyici (form → JSON Schema), Action Simulator (`simulate` / `static` / `manual`), canlı istek logu, parametre doğrulama, onay akışı, "hata döndür", işlem sırasında dolgu cümlesi.
 - [ ] Karşılaştırma tablosu, demo video/GIF, case study.
 

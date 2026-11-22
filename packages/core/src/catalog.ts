@@ -159,7 +159,8 @@ export const TTS_MODELS: TtsModel[] = [
     label: "OpenAI TTS",
     per1kChars: 0.015, // estimate — verify (model scheduled for shutdown Jan 2027)
     envKey: "OPENAI_API_KEY",
-    voices: ["coral", "alloy", "ash", "ballad", "echo", "sage", "shimmer", "verse"].map((v) => ({ id: v, label: v })),
+    // The 13 built-in voices (optimized for English; marin and cedar are recommended for quality).
+    voices: ["marin", "cedar", "coral", "alloy", "ash", "ballad", "echo", "fable", "nova", "onyx", "sage", "shimmer", "verse"].map((v) => ({ id: v, label: v[0].toUpperCase() + v.slice(1) })),
   },
 ];
 

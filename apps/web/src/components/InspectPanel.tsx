@@ -22,12 +22,16 @@ export function InspectPanel({
   agentName,
   nextCombo,
   onNextCombo,
+  language,
+  sampleText,
 }: {
   call: CallView | null;
   providers: ProviderAvailability | null;
   agentName: string;
   nextCombo: ProviderSelection;
   onNextCombo: (v: ProviderSelection) => void;
+  language: string;
+  sampleText: string;
 }) {
   const userTurns = call?.turns.filter((t) => (t.eou ?? 0) > 0) ?? [];
   const avgFirst = userTurns.length ? userTurns.reduce((a, t) => a + (t.first_audio ?? 0), 0) / userTurns.length : null;
@@ -84,7 +88,7 @@ export function InspectPanel({
                 <KV k="STT" v={label(providers?.stt, c.stt)} />
                 <KV k="LLM" v={label(providers?.llm, c.llm)} />
                 <KV k="TTS" v={label(providers?.tts, c.tts)} />
-                {c.voice && <KV k="Ses" v={label(providers?.tts.find((t) => t.id === c.tts)?.voices, c.voice)} />}
+                {c.voice && <KV k="Ses" v={c.voice_label ?? label(providers?.tts.find((t) => t.id === c.tts)?.voices, c.voice)} />}
               </>
             )}
           </div>
@@ -94,7 +98,7 @@ export function InspectPanel({
 
       <section>
         <h3 className="group-title">Başka modellerle dene</h3>
-        {providers ? <ModelPicker compact idPrefix="next" value={nextCombo} providers={providers} onChange={onNextCombo} /> : null}
+        {providers ? <ModelPicker compact idPrefix="next" language={language} sampleText={sampleText} value={nextCombo} providers={providers} onChange={onNextCombo} /> : null}
         <p className="group-foot">Aynı agent, sonraki aramada bu kombinasyonla açılır.</p>
       </section>
 

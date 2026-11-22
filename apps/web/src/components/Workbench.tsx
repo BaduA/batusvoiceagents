@@ -6,7 +6,7 @@ import type { AgentConfig, ProviderSelection } from "@vap/core";
 import type { PublicAgent } from "@/lib/agents";
 import type { ProviderAvailability } from "@/lib/providers";
 import { rememberAgent } from "@/lib/client/recent";
-import { DefinitionSection, SECTION_TITLES, type Section } from "./DefinitionPanel";
+import { DefinitionSection, SECTION_TITLES, sample, type Section } from "./DefinitionPanel";
 import { VoicePanel, type CallResult } from "./VoicePanel";
 import { InspectPanel, type CallView } from "./InspectPanel";
 import { AppMark } from "./SiteHeader";
@@ -270,7 +270,7 @@ export function Workbench({
               aria-label="Ölçümler"
             >
               <div className={view === "inspect" ? "mx-auto w-full max-w-[520px]" : ""}>
-                <InspectPanel call={call} providers={providers} agentName={config.name} nextCombo={nextCombo} onNextCombo={setNextCombo} />
+                <InspectPanel call={call} providers={providers} agentName={config.name} nextCombo={nextCombo} onNextCombo={setNextCombo} language={config.persona.language} sampleText={sample(config)} />
               </div>
             </aside>
           </div>

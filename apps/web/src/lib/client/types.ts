@@ -26,5 +26,5 @@ export interface VoiceStartResponse {
   serverUrl: string;
   token: string;
   maxSeconds: number;
-  combo: { mode: "pipeline" | "realtime"; stt: string; llm: string; tts: string; voice: string; realtime: string };
+  combo: { mode: "pipeline" | "realtime"; stt: string; llm: string; tts: string; voice: string; voice_label?: string; realtime: string };
 }

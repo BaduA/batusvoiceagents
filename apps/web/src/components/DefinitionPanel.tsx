@@ -157,7 +157,14 @@ export function DefinitionSection({
         (providers ? (
           <div>
             <p className="group-title">Ses kombinasyonu</p>
-            <ModelPicker idPrefix="def" value={config.providers} providers={providers} onChange={(v) => set((d) => void (d.providers = v))} />
+            <ModelPicker
+              idPrefix="def"
+              value={config.providers}
+              providers={providers}
+              language={config.persona.language}
+              sampleText={sample(config)}
+              onChange={(v) => set((d) => void (d.providers = v))}
+            />
             <p className="group-foot">
               {providers.voice
                 ? "Pipeline modunda her katmanı ayrı seçersiniz ve gecikme katman katman ölçülür. Realtime modunda tek model hem dinler hem konuşur; genelde daha hızlıdır, kontrolü daha azdır."
@@ -171,6 +178,13 @@ export function DefinitionSection({
       {section === "advanced" && <AdvancedSection config={config} onChange={onChange} />}
     </div>
   );
+}
+
+/** Voice previews say the agent's real greeting when there is one. */
+export function sample(config: AgentConfig) {
+  const g = config.greeting.trim();
+  if (g) return g.slice(0, 200);
+  return config.persona.language === "tr" ? `Merhaba, ben ${config.name || "asistanınız"}. Size nasıl yardımcı olabilirim?` : `Hi, I'm ${config.name || "your assistant"}. How can I help you today?`;
 }
 
 export function Group({ title, foot, action, children }: { title?: string; foot?: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {

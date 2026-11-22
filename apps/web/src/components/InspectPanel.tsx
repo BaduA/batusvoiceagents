@@ -55,60 +55,73 @@ export function InspectPanel({
   };
 
   const c = call?.combo;
+  const dur = call ? `${Math.floor(call.seconds / 60)}:${String(Math.floor(call.seconds % 60)).padStart(2, "0")}` : "—";
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-y-auto text-console-text">
-      <div className="border-b border-console-line px-4 py-3">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-[15px] font-bold text-white">{call?.live ? "Bu görüşme (canlı)" : "Son görüşme"}</h2>
-          <button onClick={download} disabled={!call} className="text-[13px] text-console-text/80 underline-offset-2 hover:text-white hover:underline disabled:opacity-40">
+    <div className="space-y-6 px-3 py-4">
+      <section>
+        <div className="mb-1.5 flex items-baseline justify-between px-3">
+          <h3 className="flex items-center gap-1.5 text-[13px] font-medium text-secondary">
+            {call?.live && <span className="size-1.5 rounded-full bg-end" aria-hidden />}
+            {call?.live ? "Bu görüşme" : "Son görüşme"}
+          </h3>
+          <button onClick={download} disabled={!call} className="text-[12px] font-medium text-needle-ink hover:underline disabled:text-tertiary disabled:no-underline">
             JSON indir
           </button>
         </div>
-        <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-3">
-          <Metric label="Ort. ilk ses" value={fmtMs(avgFirst)} hint="Konuşmanız bittikten sonra ilk sese kadar" />
-          <Metric label="Süre" value={call ? `${Math.floor(call.seconds / 60)}:${String(Math.floor(call.seconds % 60)).padStart(2, "0")}` : "—"} />
-          <Metric label="Cevap" value={call ? String(call.lines.filter((l) => l.role === "assistant").length) : "—"} />
-          <Metric label="Tahmini maliyet" value={call?.costUsd != null ? `$${call.costUsd.toFixed(4)}` : call?.live ? "bitince" : "—"} />
-        </dl>
+        <div className="grid grid-cols-2 gap-px overflow-hidden rounded-[10px] bg-separator">
+          <Stat label="Ort. ilk ses" value={fmtMs(avgFirst)} accent />
+          <Stat label="Süre" value={dur} />
+          <Stat label="Cevap" value={call ? String(call.lines.filter((l) => l.role === "assistant").length) : "—"} />
+          <Stat label="Tahmini maliyet" value={call?.costUsd != null ? `$${call.costUsd.toFixed(4)}` : call?.live ? "bitince" : "—"} />
+        </div>
         {c && (
-          <ul className="mt-3 space-y-0.5 text-[13px] text-console-text/85">
+          <div className="group-list mt-2 text-[13px]">
             {c.mode === "realtime" ? (
-              <li>Realtime: <span className="text-white">{label(providers?.realtime, c.realtime)}</span></li>
+              <KV k="Realtime" v={label(providers?.realtime, c.realtime)} />
             ) : (
               <>
-                <li>STT: <span className="text-white">{label(providers?.stt, c.stt)}</span></li>
-                <li>LLM: <span className="text-white">{label(providers?.llm, c.llm)}</span></li>
-                <li>
-                  TTS: <span className="text-white">{label(providers?.tts, c.tts)}</span>
-                  {c.voice ? <>, ses {label(providers?.tts.find((t) => t.id === c.tts)?.voices, c.voice)}</> : null}
-                </li>
+                <KV k="STT" v={label(providers?.stt, c.stt)} />
+                <KV k="LLM" v={label(providers?.llm, c.llm)} />
+                <KV k="TTS" v={label(providers?.tts, c.tts)} />
+                {c.voice && <KV k="Ses" v={label(providers?.tts.find((t) => t.id === c.tts)?.voices, c.voice)} />}
               </>
             )}
-          </ul>
+          </div>
         )}
-      </div>
+        <p className="group-foot">İlk ses: konuşmanız bittikten sonra agent'ın ilk sesine kadar geçen süre.</p>
+      </section>
 
-      <div className="border-b border-console-line px-4 py-3">
-        <h2 className="text-[15px] font-bold text-white">Başka modellerle dene</h2>
-        <p className="mb-3 mt-0.5 text-[13px] text-console-text/75">Aynı agent, sonraki görüşmede bu kombinasyonla açılır.</p>
-        {providers ? <ModelPicker idPrefix="next" tone="dark" value={nextCombo} providers={providers} onChange={onNextCombo} /> : null}
-      </div>
+      <section>
+        <h3 className="group-title">Başka modellerle dene</h3>
+        {providers ? <ModelPicker compact idPrefix="next" value={nextCombo} providers={providers} onChange={onNextCombo} /> : null}
+        <p className="group-foot">Aynı agent, sonraki aramada bu kombinasyonla açılır.</p>
+      </section>
 
-      <div className="px-4 pb-4 pt-3">
-        <h2 className="mb-2 text-[15px] font-bold text-white">İstek logu</h2>
-        <p className="rounded-[var(--radius-field)] border border-dashed border-console-line px-3 py-4 text-[13px] leading-5 text-console-text/75">
-          Agent bir işlem tetiklediğinde istek burada simüle edilerek listelenir; hiçbir gerçek sisteme gönderilmez.
-        </p>
-      </div>
+      <section>
+        <h3 className="group-title">İstek logu</h3>
+        <div className="rounded-[10px] bg-code-bg px-3.5 py-4 font-mono text-[12px] leading-[18px] text-code-text/60">
+          Agent bir işlem tetiklediğinde istek burada simüle edilir; hiçbir gerçek sisteme gönderilmez.
+        </div>
+      </section>
     </div>
   );
 }
 
-function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
+function Stat({ label, value, accent }: { label: string; value: string; accent?: boolean }) {
   return (
-    <div title={hint}>
-      <dt className="text-[12px] text-console-text/70">{label}</dt>
-      <dd className="mt-0.5 font-mono text-[17px] tabular-nums text-white">{value}</dd>
+    <div className="bg-surface px-3 py-2.5">
+      <div className="text-[11px] text-secondary">{label}</div>
+      <div className={`mt-0.5 text-[19px] font-semibold tabular-nums tracking-[-0.01em] ${accent ? "text-needle-ink" : ""}`}>{value}</div>
+    </div>
+  );
+}
+
+function KV({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex items-center gap-3 px-3 py-2">
+      <span className="text-secondary">{k}</span>
+      <span className="ml-auto truncate text-right">{v}</span>
     </div>
   );
 }

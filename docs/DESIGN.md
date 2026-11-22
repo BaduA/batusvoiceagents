@@ -1,55 +1,62 @@
-# Design plan (frontend-design skill)
+# Design plan v2: "native app" (frontend-design skill)
 
-**Subject:** a test bench where a freelancer defines a text/voice agent for a prospective client, tries it with different models, and sends the client a link.
-**Audience:** (1) the builder — technical, wants control and numbers; (2) the client opening a shared link — non-technical, wants to talk to "their" agent and see that it works.
-**Primary job:** define → talk (voice only, no text input) → see what happened (latency, cost, the requests the agent would have sent). The conversation pane shows only the live transcript.
+v1 (light desk + flat panels) was rejected by the client as "too flat, too panel-like". The brief for v2: **feel like a native app**, same features.
+
+**Subject:** a voice test bench. A freelancer defines an agent for a prospective client, calls it, reads what happened, sends a link.
+**Audience:** the builder (wants control and numbers) and the client opening a shared link (wants to talk to "their" agent).
+**Primary job:** call the agent. Everything else (definition, metrics) supports the call.
+
+## Direction
+
+Borrow the vernacular of macOS/iOS apps people already trust, instead of web-dashboard chrome:
+- A **window** with a translucent sidebar (vibrancy), a unified toolbar and a content area. Not three equal boxes.
+- Definition as **inset grouped lists** (System Settings): rounded groups, rows with the label on the left and the control on the right, hairline separators *inside* groups, footnotes under groups.
+- The call screen borrows from **FaceTime/Phone**: large centred subject, round green "call" and red "end" buttons, live captions as message bubbles.
+- An **inspector** (right sidebar, like Xcode/Keynote) for metrics, model choice and the request log.
+- A **welcome window** (Xcode / Final Cut "Welcome") instead of a landing page.
+- Light and dark appearance follow the system.
 
 ## Tokens
 
-| Name | Hex | Role |
-|---|---|---|
-| Desk | `#E7ECF0` | App background — cool console grey, not cream |
-| Sheet | `#FAFBFC` | Panels where the user types |
-| Ink | `#1D2935` | Text, primary strokes (deep slate, not tinted near-black) |
-| Graphite | `#5B6875` | Secondary text, hints |
-| Needle | `#F0A020` | The one accent: VU-meter amber. Live/listening state, primary action fill (ink text on top) |
-| Console | `#1F2B37` | Request log surface — the "machine side" of the screen |
-| Pass | `#13795B` / Fault `#C23B2E` | 200 OK / error, validation warnings |
+| Name | Light | Dark | Role |
+|---|---|---|---|
+| Window | `#ECECEF` | `#1C1C1E` | Behind everything |
+| Sidebar | `rgba(232,232,237,.72)` + blur | `rgba(44,44,46,.72)` + blur | Vibrancy material |
+| Surface | `#FFFFFF` | `#2C2C2E` | Grouped rows, content |
+| Label | `#1D1D1F` | `#F5F5F7` | Primary text |
+| Secondary | `#6E6E73` | `#98989D` | Secondary text |
+| Separator | `rgba(60,60,67,.14)` | `rgba(84,84,88,.6)` | Hairlines inside groups |
+| Needle | `#F0A020` | `#FFB340` | The one brand accent: the VU needle, LLM segment, selection |
+| Call / End | `#30B158` / `#FF3B30` | same | Phone vernacular |
 
-**Type:** Schibsted Grotesk (UI + headings, one family, weights 400/500/700; good Turkish coverage). IBM Plex Mono only for real machine content: JSON, action names, ms values in the log. Sentence case everywhere, no all-caps eyebrows.
-
-**Radius hierarchy:** inputs 6px, panels 10px, chips/pills full. Shadows: none on panels (separated by the desk colour), one soft shadow on the floating composer.
+**Type:** the platform's own UI face (SF Pro on Apple, Segoe UI Variable on Windows, Roboto on Android) with Schibsted Grotesk as the web fallback; the system face *is* the deliberate choice for a "native" brief. Sizes follow Apple's text styles: large title 26/32 bold, title 17 semibold, body 15, footnote 13, caption 12. Monospace (SF Mono / Plex Mono) only for JSON and numbers in the inspector.
 
 ## Layout
 
-Workbench (`/agents/new`, `/agents/:id`):
-
 ```
-+------------------+-------------------------------+-------------------+
-| Definition       | Conversation                  | Requests (dark)   |
-| [Task][Persona]  |  agent turn                   |  11:42 POST ...   |
-| [Knowledge]...   |  ▕▇▇▇▇▇░░░░░░▏ 820 ms         |  { json }         |
-|                  |  user turn                    |-------------------|
-| [Save and test]  |  [● Dinliyor 2:41  Bitir]     | Metrics           |
-+------------------+-------------------------------+-------------------+
+┌──────────────── window ────────────────────────────────────────────────┐
+│ ● ● ●  sidebar (blur)  │ toolbar: Resepsiyonist ▸ Görüşme   [Paylaş][Kaydet]│
+│ ◉ Görüşme              │                                   │ Inspector    │
+│ ─ Tanım                │        ╭──── VU dial ────╮        │ Son görüşme  │
+│   Görev                │        │   needle swings │        │ 820 ms  1:42 │
+│   Kişilik              │        ╰─────────────────╯        │ Modeller     │
+│   Bilgi                │       Resepsiyonist · Dinliyor    │ İstek logu   │
+│   İşlemler             │  [bubble: agent]                  │              │
+│   Modeller             │                  [bubble: you]    │              │
+│   Gelişmiş             │        ( ● )  mute   ( ✕ )        │              │
+└────────────────────────────────────────────────────────────────────────┘
 ```
 
-Phone: one column with a three-way switch (Definition / Conversation / Requests).
+Phone: sidebar becomes a scrollable pill bar under a compact toolbar; the inspector moves below the call.
 
-Landing: no marketing hero. Title + one sentence, then the template list as rows (each row shows the actions it pre-fills, because that is what differs between templates), then demo agents and "your agents".
+## The one bold thing
 
-Shared link (`/a/:slug`): conversation first; a short "what this agent does" summary instead of the editor; content-warning and "Report" in the header.
-
-## Principles
-
-1. **The memorable thing is the latency strip** under every agent turn: a thin bar split by layer (end of speech · LLM first token · TTS first audio) drawn to scale, with the number. Everything else stays quiet.
-2. The request log looks like a machine wrote it — dark console, mono, status dot — because it represents a backend call that did not happen.
-3. Structure means something: numbers only on real sequences, borders only between distinct zones.
-4. Motion only answers the user: the needle dot pulses while the agent speaks, a log row slides in when an action fires.
+**The VU dial.** A round meter on the call screen whose needle swings with the agent's voice level in real time (and a soft inner ring that follows *your* mic level). It is the product's mark come alive and replaces the generic glowing "AI orb". The needle colour says who is talking: amber when the agent speaks, green when it listens to you. Everything else stays quiet and system-like.
 
 ## Review against generic defaults
 
-- Three-pane playground is the conventional layout; kept because it matches the job (define / talk / inspect) — distinctiveness comes from palette, latency strip and console log instead.
-- Rejected: identical rounded template cards with soft shadows (SaaS-card kit) → rows with action chips.
-- Rejected: near-black UI with one neon accent → light desk, dark only where it carries meaning (log).
-- Rejected: "→" on buttons, middle-dot meta strings in UI chrome, mono for small labels.
+- Glowing gradient orb for voice → rejected (every voice demo uses it); replaced by the VU dial tied to the brand mark.
+- Three equal rounded panels (v1) → a window with sidebar + content + inspector, different materials for each.
+- SaaS card kit (same radius + same shadow everywhere) → radius hierarchy: window 12, groups 10, controls 7, buttons round; shadows only on the window and floating call controls.
+- Middle-dot meta strings in chrome → used only where Apple itself does (subtitle under the agent name), nowhere else.
+- All-caps eyebrows → group headers are sentence case footnote-size text, as in System Settings.

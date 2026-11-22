@@ -1,13 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { AppMark } from "./SiteHeader";
 
 export function AdminLogin() {
   const [key, setKey] = useState("");
   const [error, setError] = useState<string | null>(null);
   return (
     <form
-      className="max-w-sm"
+      className="mx-auto mt-16 max-w-[20rem] text-center"
       onSubmit={async (e) => {
         e.preventDefault();
         const r = await fetch("/api/admin/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ key }) });
@@ -15,14 +16,17 @@ export function AdminLogin() {
         else setError((await r.json()).error);
       }}
     >
-      <h1 className="text-[24px] font-bold">Yönetici girişi</h1>
-      <p className="mt-2 text-[15px] text-graphite">Yönetici modunda limit yoktur ve tüm modeller açıktır.</p>
-      <label htmlFor="key" className="label mt-6">
+      <div className="flex justify-center">
+        <AppMark size={56} />
+      </div>
+      <h1 className="mt-4 text-[22px] font-bold">Yönetici girişi</h1>
+      <p className="mt-1 text-[14px] text-secondary">Yönetici modunda limit yoktur ve tüm modeller açıktır.</p>
+      <label htmlFor="key" className="sr-only">
         Yönetici anahtarı
       </label>
-      <input id="key" type="password" className="field" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="current-password" />
-      {error && <p className="mt-2 text-[14px] text-fault">{error}</p>}
-      <button className="btn-primary mt-4">Giriş yap</button>
+      <input id="key" type="password" placeholder="Yönetici anahtarı" className="field mt-6 text-center" value={key} onChange={(e) => setKey(e.target.value)} autoComplete="current-password" />
+      {error && <p className="mt-2 text-[13px] text-end">{error}</p>}
+      <button className="btn-primary mt-3 w-full py-2">Giriş yap</button>
     </form>
   );
 }
@@ -49,9 +53,9 @@ export function AdminDashboard() {
   };
 
   return (
-    <div className="space-y-12">
-      <div className="flex flex-wrap items-center gap-3">
-        <h1 className="mr-auto text-[24px] font-bold">Yönetici paneli</h1>
+    <div className="space-y-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <h1 className="mr-auto text-[26px] font-bold tracking-[-0.02em]">Yönetim</h1>
         <button
           className="btn-quiet"
           onClick={async () => {
@@ -83,41 +87,41 @@ export function AdminDashboard() {
           Çıkış
         </button>
       </div>
-      {msg && <p className="text-[14px] text-pass">{msg}</p>}
+      {msg && <p className="rounded-[10px] bg-fill px-3.5 py-2 text-[13px]">{msg}</p>}
 
       <section>
-        <h2 className="text-[18px] font-bold">İnceleme bekleyenler</h2>
-        {data?.review.length === 0 && <p className="mt-2 text-[15px] text-graphite">İnceleme bekleyen agent yok.</p>}
-        <ul className="mt-3 divide-y divide-rule border-y border-rule">
+        <h2 className="group-title">İnceleme bekleyenler</h2>
+        <div className="group-list">
+          {data?.review.length === 0 && <p className="row text-secondary">İnceleme bekleyen agent yok.</p>}
           {data?.review.map((a) => (
-            <li key={a.id} className="flex flex-wrap items-center gap-3 py-3">
+            <div key={a.id} className="row flex-wrap py-2.5">
               <div className="min-w-0 flex-1">
                 <a href={`/agents/${a.id}`} className="font-medium hover:underline">
                   {a.name}
                 </a>
-                <p className="text-[13px] text-graphite">
+                <p className="text-[12px] text-secondary">
                   {a.reason ?? "Neden yok"}
                   {a.reports ? `, ${a.reports} bildirim` : ""}
                 </p>
               </div>
-              <button className="btn-quiet py-1 text-[14px]" onClick={() => act(a.id, "approve")}>
+              <button className="btn-quiet py-1 text-[13px]" onClick={() => act(a.id, "approve")}>
                 Onayla ve paylaşımı aç
               </button>
-              <button className="btn-text py-1 text-[14px] hover:text-fault" onClick={() => act(a.id, "delete")}>
+              <button className="btn-text py-1 text-[13px] text-end hover:text-end" onClick={() => act(a.id, "delete")}>
                 Sil
               </button>
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       </section>
 
       <section>
-        <h2 className="text-[18px] font-bold">Güvenlik kayıtları</h2>
-        <div className="mt-3 overflow-x-auto rounded-[var(--radius-panel)] bg-console p-1">
-          <table className="w-full text-left text-[13px] text-console-text">
-            <thead className="text-console-text/70">
+        <h2 className="group-title">Güvenlik kayıtları</h2>
+        <div className="overflow-x-auto rounded-[10px] bg-surface">
+          <table className="w-full text-left text-[13px]">
+            <thead className="text-[12px] text-secondary">
               <tr>
-                <th className="px-3 py-2 font-medium">Zaman</th>
+                <th className="px-4 py-2 font-medium">Zaman</th>
                 <th className="px-3 py-2 font-medium">Katman</th>
                 <th className="px-3 py-2 font-medium">Karar</th>
                 <th className="px-3 py-2 font-medium">Kategori</th>
@@ -127,18 +131,20 @@ export function AdminDashboard() {
             </thead>
             <tbody>
               {data?.events.map((e) => (
-                <tr key={e.id} className="border-t border-console-line align-top">
-                  <td className="whitespace-nowrap px-3 py-2 font-mono">{new Date(e.createdAt).toLocaleString("tr-TR")}</td>
+                <tr key={e.id} className="border-t border-separator align-top">
+                  <td className="whitespace-nowrap px-4 py-2 tabular-nums">{new Date(e.createdAt).toLocaleString("tr-TR")}</td>
                   <td className="px-3 py-2">{e.layer}</td>
-                  <td className={`px-3 py-2 ${e.decision === "block" ? "text-[#ff8a7d]" : "text-needle"}`}>{e.decision}</td>
-                  <td className="px-3 py-2 font-mono">{e.categories.join(", ")}</td>
-                  <td className="max-w-[28rem] px-3 py-2">{e.reason}</td>
-                  <td className="px-3 py-2 font-mono">{e.ipHash.slice(0, 8)}</td>
+                  <td className="px-3 py-2">
+                    <span className={`rounded-full px-2 py-0.5 text-[12px] font-medium ${e.decision === "block" ? "bg-end-soft text-end" : "bg-needle-soft text-needle-ink"}`}>{e.decision}</span>
+                  </td>
+                  <td className="px-3 py-2 font-mono text-[12px]">{e.categories.join(", ")}</td>
+                  <td className="max-w-[28rem] px-3 py-2 text-secondary">{e.reason}</td>
+                  <td className="px-3 py-2 font-mono text-[12px] text-secondary">{e.ipHash.slice(0, 8)}</td>
                 </tr>
               ))}
               {data?.events.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-3 py-4 text-console-text/70">
+                  <td colSpan={6} className="px-4 py-3 text-secondary">
                     Kayıt yok.
                   </td>
                 </tr>
@@ -149,14 +155,14 @@ export function AdminDashboard() {
       </section>
 
       <section>
-        <h2 className="text-[18px] font-bold">Son agent'lar</h2>
-        <ul className="mt-3 divide-y divide-rule border-y border-rule">
+        <h2 className="group-title">Son agent'lar</h2>
+        <div className="group-list">
           {data?.recent.map((a) => (
-            <li key={a.id} className="flex items-center gap-3 py-2.5 text-[15px]">
-              <a href={`/agents/${a.id}`} className="flex-1 hover:underline">
+            <div key={a.id} className="row">
+              <a href={`/agents/${a.id}`} className="min-w-0 flex-1 truncate hover:underline">
                 {a.name}
               </a>
-              <span className="text-[13px] text-graphite">
+              <span className="text-[12px] text-secondary">
                 {a.owner === "admin" ? "yönetici" : "anonim"}, {a.share ? "paylaşımda" : "paylaşım kapalı"}
               </span>
               {a.share && (
@@ -164,9 +170,9 @@ export function AdminDashboard() {
                   Dondur
                 </button>
               )}
-            </li>
+            </div>
           ))}
-        </ul>
+        </div>
       </section>
     </div>
   );

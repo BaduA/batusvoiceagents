@@ -1,7 +1,6 @@
 import { notFound, redirect } from "next/navigation";
 import { getAgentById, publicAgent } from "@/lib/agents";
 import { canEditAgent } from "@/lib/security";
-import { SiteHeader } from "@/components/SiteHeader";
 import { Workbench } from "@/components/Workbench";
 
 export default async function AgentPage({ params }: PageProps<"/agents/[id]">) {
@@ -13,10 +12,5 @@ export default async function AgentPage({ params }: PageProps<"/agents/[id]">) {
     notFound();
   }
   const pub = publicAgent(agent, true);
-  return (
-    <div className="flex h-dvh flex-col">
-      <SiteHeader />
-      <Workbench agent={pub} initialConfig={pub.config} mode="edit" />
-    </div>
-  );
+  return <Workbench agent={pub} initialConfig={pub.config} mode="edit" />;
 }

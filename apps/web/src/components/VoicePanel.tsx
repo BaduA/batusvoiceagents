@@ -7,14 +7,19 @@ import {
   useDataChannel,
   useLocalParticipant,
   useRoomContext,
+  useTrackVolume,
   useTranscriptions,
   useVoiceAssistant,
 } from "@livekit/components-react";
+import type { LocalAudioTrack } from "livekit-client";
 import type { AgentConfig } from "@vap/core";
 import type { ProviderAvailability } from "@/lib/providers";
 import type { RoomMessage, TranscriptLine, TurnLatency, VoiceStartResponse } from "@/lib/client/types";
 import { LatencyStrip } from "./LatencyStrip";
 import { Turnstile } from "./Turnstile";
+import { VuDial } from "./ui/VuDial";
+import { Switch } from "./ui/Switch";
+import { IconMic, IconMicOff, IconPhone, IconPhoneDown, IconWarn } from "./ui/icons";
 
 const CONSENT_KEY = "vap.voiceConsent.v1";
 const noopSubscribe = () => () => {};
@@ -43,6 +48,7 @@ export function VoicePanel(props: {
   providers: ProviderAvailability | null;
   providerOverride: Partial<AgentConfig["providers"]>;
   contentWarning: boolean;
+  subtitle?: string;
   onLive: (data: { lines: TranscriptLine[]; turns: TurnLatency[]; elapsed: number; combo: VoiceStartResponse["combo"]; sessionId: string } | null) => void;
   onEnded: (r: CallResult) => void;
 }) {
@@ -50,16 +56,16 @@ export function VoicePanel(props: {
   const [phase, setPhase] = useState<Phase>("idle");
   const [error, setError] = useState<string | null>(null);
   const [consent, setConsent] = useState(false);
+  const storedConsent = useSyncExternalStore(noopSubscribe, readConsent, () => false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [conn, setConn] = useState<VoiceStartResponse | null>(null);
   const [lastLines, setLastLines] = useState<TranscriptLine[]>([]);
   const [lastTurns, setLastTurns] = useState<TurnLatency[]>([]);
 
-  const storedConsent = useSyncExternalStore(noopSubscribe, readConsent, () => false);
-
   const siteKey = providers?.turnstileSiteKey ?? null;
   const consented = consent || storedConsent;
-  const canStart = consented && (!siteKey || turnstileToken) && phase !== "starting" && providers?.voice !== false;
+  const voiceReady = providers?.voice !== false;
+  const canStart = consented && (!siteKey || turnstileToken) && phase !== "starting" && voiceReady;
 
   async function start() {
     setError(null);
@@ -104,77 +110,94 @@ export function VoicePanel(props: {
   );
 
   const speaker = config.name || "Agent";
+  const subtitle = props.subtitle ?? config.company.name;
+
+  if (phase === "live" && conn) {
+    return (
+      <LiveKitRoom serverUrl={conn.serverUrl} token={conn.token} connect audio video={false} className="flex min-h-0 flex-1 flex-col" onError={(e) => setError(e.message)}>
+        <RoomAudioRenderer />
+        <LiveCall
+          speaker={speaker}
+          contentWarning={contentWarning}
+          maxSeconds={conn.maxSeconds}
+          onTick={(d) => onLive({ ...d, combo: conn.combo, sessionId: conn.sessionId })}
+          onEnded={handleEnded}
+          onError={setError}
+          error={error}
+        />
+      </LiveKitRoom>
+    );
+  }
+
+  const status =
+    phase === "starting" ? "Bağlanıyor…" : phase === "ended" ? "Görüşme bitti" : !voiceReady ? "Sesli mod sunucuda yapılandırılmamış" : subtitle || "Aramaya hazır";
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <header className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-rule px-4 py-3 sm:px-5">
-        <div className="min-w-0 flex-1">
-          <h2 className="truncate text-[17px] font-bold leading-6">{speaker}</h2>
-          {config.company.name && <p className="truncate text-[13px] text-graphite">{config.company.name}</p>}
-        </div>
-      </header>
-      {contentWarning && <p className="border-b border-rule bg-needle-soft/60 px-5 py-2 text-[13px] text-ink">Bu agent argo veya sert dil içerebilir.</p>}
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        <Hero speaker={speaker} status={status} contentWarning={contentWarning} />
+        {lastLines.length > 0 ? (
+          <Transcript speaker={speaker} lines={lastLines} turns={lastTurns} />
+        ) : (
+          <p className="mx-auto max-w-[30rem] px-6 text-center text-[14px] leading-[21px] text-secondary">
+            {config.greeting ? <>Aradığınızda “{config.greeting}” diye açacak. </> : null}
+            Müşteri gibi konuşun; konuşma burada yazıya dökülür ve her cevabın kaç milisaniyede geldiği altında görünür.
+          </p>
+        )}
+      </div>
 
-      {phase === "live" && conn ? (
-        <LiveKitRoom
-          serverUrl={conn.serverUrl}
-          token={conn.token}
-          connect
-          audio
-          video={false}
-          className="flex min-h-0 flex-1 flex-col"
-          onError={(e) => setError(e.message)}
+      <div className="flex flex-col items-center gap-4 px-4 pb-6 pt-4">
+        {error && <Banner tone="error">{error}</Banner>}
+        {!consented && (
+          <div className="flex w-full max-w-[26rem] items-start gap-3 rounded-[12px] bg-surface-2 px-4 py-3">
+            <p className="flex-1 text-[13px] leading-[18px] text-secondary">
+              Sesiniz yazıya çevrilip yapay zekâ sağlayıcılarına iletilir; transkript birkaç gün sonra silinir. Gerçek kişisel bilgi, kart veya şifre söylemeyin.
+            </p>
+            <Switch label="Onaylıyorum" checked={consent} onChange={setConsent} />
+          </div>
+        )}
+        {siteKey && consented && !turnstileToken && <Turnstile siteKey={siteKey} onToken={setTurnstileToken} />}
+        <RoundButton
+          label={phase === "starting" ? "Bağlanıyor" : phase === "ended" ? "Tekrar ara" : "Ara"}
+          tone="call"
+          onClick={start}
+          disabled={!canStart}
+          pulse={canStart === true && phase === "idle"}
         >
-          <RoomAudioRenderer />
-          <LiveCall speaker={speaker} maxSeconds={conn.maxSeconds} onTick={(d) => onLive({ ...d, combo: conn.combo, sessionId: conn.sessionId })} onEnded={handleEnded} onError={setError} error={error} />
-        </LiveKitRoom>
-      ) : (
-        <>
-          <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-5">
-            <Transcript speaker={speaker} lines={lastLines} turns={lastTurns} />
-            {phase !== "ended" && (
-              <IdleIntro speaker={speaker} greeting={config.greeting} voiceReady={providers?.voice ?? true} />
-            )}
-          </div>
-          <div className="border-t border-rule px-4 py-4 sm:px-5">
-            {error && (
-              <p role="alert" className="mb-3 rounded-[var(--radius-field)] bg-fault-soft px-3 py-2 text-[14px] text-fault">
-                {error}
-              </p>
-            )}
-            {!consented && (
-              <label className="mb-3 flex items-start gap-2.5 text-[14px] leading-5 text-ink">
-                <input type="checkbox" className="mt-0.5 size-4 accent-[var(--ink)]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
-                <span>
-                  Sesim yazıya çevrilip yapay zekâ sağlayıcılarına iletilecek; transkript {""}
-                  <span className="whitespace-nowrap">birkaç gün</span> sonra silinecek. Gerçek kişisel bilgi, kart veya şifre söylemeyeceğim.
-                </span>
-              </label>
-            )}
-            {siteKey && consented && !turnstileToken && <Turnstile siteKey={siteKey} onToken={setTurnstileToken} />}
-            <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:gap-3">
-              <button onClick={start} disabled={!canStart} className="btn-primary h-12 text-[16px] sm:px-8">
-                <MicIcon />
-                {phase === "starting" ? "Bağlanıyor…" : phase === "ended" ? "Yeniden ara" : "Görüşmeyi başlat"}
-              </button>
-              <span className="text-[13px] leading-5 text-graphite">Mikrofon izni istenecek. Görüşme en fazla 3 dakika sürer.</span>
-            </div>
-          </div>
-        </>
-      )}
+          <IconPhone size={28} />
+        </RoundButton>
+        <p className="text-[12px] text-tertiary">Mikrofon izni istenir. Görüşme en fazla 3 dakika sürer.</p>
+      </div>
     </div>
   );
 }
 
-function IdleIntro({ speaker, greeting, voiceReady }: { speaker: string; greeting: string; voiceReady: boolean }) {
+function Hero({
+  speaker,
+  status,
+  contentWarning,
+  level,
+  micLevel,
+  tone,
+}: {
+  speaker: string;
+  status: React.ReactNode;
+  contentWarning: boolean;
+  level?: number;
+  micLevel?: number;
+  tone?: "rest" | "speaking" | "listening" | "thinking";
+}) {
   return (
-    <div className="mx-auto mt-6 max-w-[40rem] text-[15px] leading-7 text-graphite">
-      {!voiceReady ? (
-        <p>Sesli mod sunucuda henüz yapılandırılmamış (LiveKit ayarları eksik).</p>
-      ) : (
-        <p>
-          Görüşmeyi başlatınca {speaker} {greeting ? <>“{greeting}” diyerek</> : "kendini tanıtarak"} açacak. Müşteri gibi konuşun; söyledikleriniz ve cevaplar burada yazıya dökülür, her cevabın ne kadar sürede geldiği altında görünür.
-        </p>
+    <div className="flex flex-col items-center px-4 pb-6 pt-8 sm:pt-12">
+      <VuDial level={level} micLevel={micLevel} tone={tone} size={240} />
+      <h2 className="mt-3 text-center text-[24px] font-bold leading-[30px] tracking-[-0.02em]">{speaker}</h2>
+      <p className="mt-0.5 text-center text-[15px] tabular-nums text-secondary" aria-live="polite">
+        {status}
+      </p>
+      {contentWarning && (
+        <span className="mt-2 inline-flex items-center gap-1 rounded-full bg-needle-soft px-2.5 py-0.5 text-[12px] font-medium text-needle-ink">
+          <IconWarn size={13} /> Argo veya sert dil içerebilir
+        </span>
       )}
     </div>
   );
@@ -182,24 +205,73 @@ function IdleIntro({ speaker, greeting, voiceReady }: { speaker: string; greetin
 
 function Transcript({ speaker, lines, turns }: { speaker: string; lines: TranscriptLine[]; turns: TurnLatency[] }) {
   let agentIdx = -1;
-  if (lines.length === 0) return null;
   return (
-    <ol className="mx-auto max-w-[44rem] space-y-6">
-      {lines.map((l) => {
+    <ol className="mx-auto flex max-w-[36rem] flex-col gap-2 px-4 pb-6" aria-label="Transkript">
+      {lines.map((l, i) => {
         const isAgent = l.role === "assistant";
         if (isAgent) agentIdx++;
         const latency = isAgent ? turns[agentIdx] : undefined;
+        const firstOfRun = i === 0 || lines[i - 1].role !== l.role;
         return (
-          <li key={l.id} className="grid grid-cols-1 gap-1 sm:grid-cols-[7.5rem_minmax(0,1fr)] sm:gap-4">
-            <span className={`pt-0.5 text-[13px] font-medium sm:text-right ${isAgent ? "text-ink" : "text-graphite"}`}>{isAgent ? speaker : "Siz"}</span>
-            <div className={isAgent ? "" : "border-l-2 border-rule pl-3"}>
-              <p className={`whitespace-pre-wrap text-[16px] leading-7 ${isAgent ? "text-ink" : "text-graphite"} ${l.final ? "" : "opacity-70"}`}>{l.text}</p>
-              {latency && <LatencyStrip latency={latency} />}
-            </div>
+          <li key={l.id} className={`flex flex-col ${isAgent ? "items-start" : "items-end"} ${firstOfRun && i > 0 ? "mt-2" : ""}`} style={{ animation: "rise 220ms ease-out" }}>
+            {firstOfRun && <span className="mb-0.5 px-3 text-[11px] text-secondary">{isAgent ? speaker : "Siz"}</span>}
+            <p
+              className={`max-w-[85%] whitespace-pre-wrap rounded-[18px] px-3.5 py-2 text-[15px] leading-[21px] ${
+                isAgent ? "rounded-bl-[6px] bg-fill text-label" : "rounded-br-[6px] bg-label text-surface"
+              } ${l.final ? "" : "opacity-60"}`}
+            >
+              {l.text}
+            </p>
+            {latency && <LatencyStrip latency={latency} />}
           </li>
         );
       })}
     </ol>
+  );
+}
+
+function Banner({ tone, children }: { tone: "error" | "info"; children: React.ReactNode }) {
+  return (
+    <p role={tone === "error" ? "alert" : "status"} className={`flex max-w-[30rem] items-start gap-2 rounded-[12px] px-3.5 py-2.5 text-[13px] leading-[18px] ${tone === "error" ? "bg-end-soft text-end" : "bg-needle-soft text-needle-ink"}`}>
+      <IconWarn size={16} className="mt-px shrink-0" />
+      <span>{children}</span>
+    </p>
+  );
+}
+
+function RoundButton({
+  label,
+  tone,
+  onClick,
+  disabled,
+  pulse,
+  pressed,
+  children,
+}: {
+  label: string;
+  tone: "call" | "end" | "neutral";
+  onClick: () => void;
+  disabled?: boolean;
+  pulse?: boolean;
+  pressed?: boolean;
+  children: React.ReactNode;
+}) {
+  const bg = tone === "call" ? "bg-call text-white" : tone === "end" ? "bg-end text-white" : pressed ? "bg-label text-surface" : "bg-fill-strong text-label";
+  return (
+    <div className="flex flex-col items-center gap-1.5">
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        aria-label={label}
+        aria-pressed={tone === "neutral" ? pressed : undefined}
+        className={`grid size-[64px] place-items-center rounded-full ${bg} shadow-float transition-[transform,opacity] active:scale-95 disabled:opacity-35`}
+        style={pulse ? { animation: "ring 1.6s ease-out infinite" } : undefined}
+      >
+        {children}
+      </button>
+      <span className="text-[12px] text-secondary">{label}</span>
+    </div>
   );
 }
 
@@ -217,6 +289,7 @@ const STATE_LABEL: Record<string, string> = {
 
 function LiveCall({
   speaker,
+  contentWarning,
   maxSeconds,
   onTick,
   onEnded,
@@ -224,6 +297,7 @@ function LiveCall({
   error,
 }: {
   speaker: string;
+  contentWarning: boolean;
   maxSeconds: number;
   onTick: (d: { lines: TranscriptLine[]; turns: TurnLatency[]; elapsed: number }) => void;
   onEnded: (r: { lines: TranscriptLine[]; turns: TurnLatency[]; durationSec: number }) => void;
@@ -231,14 +305,17 @@ function LiveCall({
   error: string | null;
 }) {
   const room = useRoomContext();
-  const { state, agent } = useVoiceAssistant();
-  const { localParticipant, isMicrophoneEnabled } = useLocalParticipant();
+  const { state, agent, audioTrack } = useVoiceAssistant();
+  const { localParticipant, isMicrophoneEnabled, microphoneTrack } = useLocalParticipant();
+  const agentLevel = useTrackVolume(audioTrack);
+  const micLevel = useTrackVolume(microphoneTrack?.track as LocalAudioTrack | undefined);
   const streams = useTranscriptions();
   const [turns, setTurns] = useState<TurnLatency[]>([]);
   const [notice, setNotice] = useState<string | null>(null);
   const [elapsed, setElapsed] = useState(0);
   const startedAt = useRef(0);
   const endedRef = useRef(false);
+  const scroller = useRef<HTMLDivElement>(null);
 
   useDataChannel("vap", (msg) => {
     let m: RoomMessage;
@@ -272,6 +349,10 @@ function LiveCall({
     return () => clearInterval(iv);
   }, []);
 
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: scroller.current.scrollHeight, behavior: "smooth" });
+  }, [lines]);
+
   // Keep the latest callback in a ref so a new parent closure doesn't re-trigger the effect.
   const onTickRef = useRef(onTick);
   useEffect(() => {
@@ -293,61 +374,38 @@ function LiveCall({
 
   const remaining = Math.max(0, maxSeconds - elapsed);
   const mmss = (s: number) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
+  const tone = state === "speaking" ? "speaking" : state === "listening" ? "listening" : state === "thinking" ? "thinking" : "rest";
 
   return (
-    <>
-      <div className="min-h-0 flex-1 overflow-y-auto px-4 py-6 sm:px-5" aria-live="polite">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto">
+        <Hero
+          speaker={speaker}
+          contentWarning={contentWarning}
+          level={state === "speaking" ? agentLevel : 0}
+          micLevel={isMicrophoneEnabled ? micLevel : 0}
+          tone={tone}
+          status={
+            <>
+              {STATE_LABEL[state] ?? state}
+              <span className="mx-1.5 text-tertiary">·</span>
+              <span title="Kalan süre">{mmss(remaining)}</span>
+            </>
+          }
+        />
         <Transcript speaker={speaker} lines={lines} turns={turns} />
-        {lines.length === 0 && <p className="mx-auto mt-6 max-w-[40rem] text-[15px] text-graphite">{STATE_LABEL[state] ?? "Bağlanıyor"}…</p>}
       </div>
-      <div className="border-t border-rule px-4 py-4 sm:px-5">
-        {(error || notice) && (
-          <p role="status" className={`mb-3 rounded-[var(--radius-field)] px-3 py-2 text-[14px] ${error ? "bg-fault-soft text-fault" : "bg-needle-soft/70 text-ink"}`}>
-            {error ?? notice}
-          </p>
-        )}
-        <div className="flex flex-wrap items-center gap-3">
-          <StateNeedle state={state} />
-          <span className="min-w-[7rem] text-[15px] font-medium">{STATE_LABEL[state] ?? state}</span>
-          <span className="font-mono text-[14px] tabular-nums text-graphite" title="Kalan süre">
-            {mmss(remaining)}
-          </span>
-          <div className="ml-auto flex items-center gap-2">
-            <button
-              className="btn-quiet h-11"
-              onClick={() => localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}
-              aria-pressed={!isMicrophoneEnabled}
-            >
-              {isMicrophoneEnabled ? "Sessize al" : "Mikrofonu aç"}
-            </button>
-            <button className="btn h-11 bg-ink text-sheet hover:bg-ink/90" onClick={end}>
-              Görüşmeyi bitir
-            </button>
-          </div>
+      <div className="flex flex-col items-center gap-4 px-4 pb-6 pt-4">
+        {(error || notice) && <Banner tone={error ? "error" : "info"}>{error ?? notice}</Banner>}
+        <div className="flex items-start gap-10">
+          <RoundButton label={isMicrophoneEnabled ? "Sessize al" : "Sesi aç"} tone="neutral" pressed={!isMicrophoneEnabled} onClick={() => localParticipant.setMicrophoneEnabled(!isMicrophoneEnabled)}>
+            {isMicrophoneEnabled ? <IconMic size={26} /> : <IconMicOff size={26} />}
+          </RoundButton>
+          <RoundButton label="Bitir" tone="end" onClick={end}>
+            <IconPhoneDown size={30} />
+          </RoundButton>
         </div>
       </div>
-    </>
-  );
-}
-
-/** The one accent: a needle dot that pulses while the agent speaks and breathes while it listens. */
-function StateNeedle({ state }: { state: string }) {
-  const speaking = state === "speaking";
-  const thinking = state === "thinking";
-  return (
-    <span
-      aria-hidden
-      className={`inline-block size-4 rounded-full ${speaking ? "bg-needle" : thinking ? "bg-needle/60" : state === "listening" ? "bg-pass" : "bg-rule"}`}
-      style={speaking ? { animation: "needle-pulse 1.1s ease-out infinite" } : undefined}
-    />
-  );
-}
-
-function MicIcon() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" aria-hidden>
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M5 11a7 7 0 0 0 14 0M12 18v3" />
-    </svg>
+    </div>
   );
 }

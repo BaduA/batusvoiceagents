@@ -1,20 +1,21 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { buildPersonaPrompt, buildSystemPrompt, agentConfigSchema, type AgentConfig } from "@vap/core";
+import { agentConfigSchema, buildPersonaPrompt, buildSystemPrompt, type AgentConfig } from "@vap/core";
 import type { ProviderAvailability } from "@/lib/providers";
-import { ModelPicker } from "./ModelPicker";
+import { ModelPicker, SelectRow } from "./ModelPicker";
+import { Switch } from "./ui/Switch";
 
-type Tab = "task" | "persona" | "knowledge" | "actions" | "models" | "advanced";
+export type Section = "task" | "persona" | "knowledge" | "actions" | "models" | "advanced";
 
-const TABS: { id: Tab; label: string }[] = [
-  { id: "task", label: "Görev" },
-  { id: "persona", label: "Kişilik" },
-  { id: "knowledge", label: "Bilgi" },
-  { id: "actions", label: "İşlemler" },
-  { id: "models", label: "Modeller" },
-  { id: "advanced", label: "Gelişmiş" },
-];
+export const SECTION_TITLES: Record<Section, string> = {
+  task: "Görev",
+  persona: "Kişilik",
+  knowledge: "Bilgi",
+  actions: "İşlemler",
+  models: "Modeller",
+  advanced: "Gelişmiş",
+};
 
 const TONES = ["samimi", "resmi", "esprili", "sert", "sakin", "enerjik"];
 const LANGS: [string, string][] = [
@@ -26,16 +27,18 @@ const LANGS: [string, string][] = [
   ["ar", "العربية"],
 ];
 
-export function DefinitionPanel({
+/** One definition section, rendered as inset grouped lists (System Settings). */
+export function DefinitionSection({
+  section,
   config,
   onChange,
   providers,
 }: {
+  section: Section;
   config: AgentConfig;
   onChange: (c: AgentConfig) => void;
   providers: ProviderAvailability | null;
 }) {
-  const [tab, setTab] = useState<Tab>("task");
   const set = (fn: (d: AgentConfig) => void) => {
     const draft = structuredClone(config);
     fn(draft);
@@ -43,101 +46,67 @@ export function DefinitionPanel({
   };
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <div role="tablist" aria-label="Agent tanımı" className="flex gap-x-0.5 overflow-x-auto whitespace-nowrap border-b border-rule px-3 pt-3">
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            role="tab"
-            aria-selected={tab === t.id}
-            onClick={() => setTab(t.id)}
-            className={`-mb-px border-b-2 px-2 pb-2 pt-1 text-[14px] font-medium ${
-              tab === t.id ? "border-needle text-ink" : "border-transparent text-graphite hover:text-ink"
-            }`}
-          >
-            {t.label}
-            {t.id === "actions" && config.actions.length > 0 && (
-              <span className="ml-1.5 rounded-full bg-desk px-1.5 text-[12px] text-graphite">{config.actions.length}</span>
-            )}
-          </button>
-        ))}
-      </div>
+    <div className="mx-auto w-full max-w-[640px] space-y-7 px-4 py-6 sm:px-6 sm:py-8">
+      {section === "task" && (
+        <>
+          <Group title="Agent">
+            <InputRow id="name" label="Ad" value={config.name} onChange={(v) => set((d) => void (d.name = v))} placeholder="Ör. Resepsiyonist" />
+            <InputRow id="greet" label="İlk cümle" value={config.greeting} onChange={(v) => set((d) => void (d.greeting = v))} placeholder="Merhaba, nasıl yardımcı olabilirim?" />
+          </Group>
+          <Group title="Şirket" foot="Agent'ın temsil ettiği işletme. Boş bırakılabilir; agent sadece buraya ve Bilgi bölümüne yazılanları bilir.">
+            <InputRow id="company" label="Şirket adı" value={config.company.name} onChange={(v) => set((d) => void (d.company.name = v))} placeholder="İsteğe bağlı" />
+            <TextRow id="cdesc" label="Hakkında" rows={2} value={config.company.description} onChange={(v) => set((d) => void (d.company.description = v))} />
+            <TextRow id="cinfo" label="Adres, saatler, kurallar" rows={3} value={config.company.info} onChange={(v) => set((d) => void (d.company.info = v))} />
+          </Group>
+          <Group title="Görev tanımı" foot="Ne yapar, neyi yapmaz, hedefi ne? Agent bu metni talimat olarak alır.">
+            <TextRow id="role" rows={6} value={config.role} onChange={(v) => set((d) => void (d.role = v))} placeholder="Müşterileri karşıla, randevu al…" />
+          </Group>
+        </>
+      )}
 
-      <div className="min-h-0 flex-1 space-y-5 overflow-y-auto px-4 py-5">
-        {tab === "task" && (
-          <>
-            <Field label="Agent adı" htmlFor="name">
-              <input id="name" className="field" value={config.name} onChange={(e) => set((d) => void (d.name = e.target.value))} />
-            </Field>
-            <Field label="Şirket adı" htmlFor="company" hint="Agent'ın temsil ettiği işletme. Boş bırakılabilir.">
-              <input id="company" className="field" value={config.company.name} onChange={(e) => set((d) => void (d.company.name = e.target.value))} />
-            </Field>
-            <Field label="Şirket hakkında" htmlFor="cdesc">
-              <textarea id="cdesc" rows={2} className="field" value={config.company.description} onChange={(e) => set((d) => void (d.company.description = e.target.value))} />
-            </Field>
-            <Field label="Adres, saatler, kurallar" htmlFor="cinfo">
-              <textarea id="cinfo" rows={3} className="field" value={config.company.info} onChange={(e) => set((d) => void (d.company.info = e.target.value))} />
-            </Field>
-            <Field label="Görev tanımı" htmlFor="role" hint="Ne yapar, neyi yapmaz, hedefi ne?">
-              <textarea id="role" rows={5} className="field" value={config.role} onChange={(e) => set((d) => void (d.role = e.target.value))} />
-            </Field>
-            <Field label="İlk cümle" htmlFor="greet" hint="Görüşme bu cümleyle açılır.">
-              <input id="greet" className="field" value={config.greeting} onChange={(e) => set((d) => void (d.greeting = e.target.value))} />
-            </Field>
-          </>
-        )}
+      {section === "persona" && (
+        <>
+          <Group foot="Serbest yazabilirsiniz: “alaycı ama yardımsever”, “küfürlü vergi danışmanı”…">
+            <InputRow id="tone" label="Ton" value={config.persona.tone} onChange={(v) => set((d) => void (d.persona.tone = v))} />
+            <div className="flex flex-wrap gap-1.5 px-4 py-3">
+              {TONES.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  onClick={() => set((d) => void (d.persona.tone = t))}
+                  className={`rounded-full px-3 py-1 text-[13px] font-medium transition-colors ${config.persona.tone === t ? "bg-label text-surface" : "bg-fill text-label hover:bg-fill-strong"}`}
+                >
+                  {t}
+                </button>
+              ))}
+            </div>
+          </Group>
+          <Group title="Konuşma" foot="Kullanıcı başka bir dilde konuşursa agent onun diline geçer. Kısa cevaplar seste daha doğal duyulur ve gecikmeyi azaltır.">
+            <SelectRow id="lang" label="Dil" value={config.persona.language} options={LANGS.map(([id, label]) => ({ id, label, available: true }))} onChange={(v) => set((d) => void (d.persona.language = v))} />
+            <div className="row">
+              <span className="label flex-1">Cevap uzunluğu</span>
+              <Stepper
+                value={config.limits.max_reply_sentences}
+                min={1}
+                max={6}
+                onChange={(n) => set((d) => void (d.limits.max_reply_sentences = n))}
+                format={(n) => `en fazla ${n} cümle`}
+              />
+            </div>
+          </Group>
+          <Group title="Üslup notları">
+            <TextRow id="style" rows={4} value={config.persona.style_notes} onChange={(v) => set((d) => void (d.persona.style_notes = v))} placeholder="Ör. Müşteriye adıyla hitap et." />
+          </Group>
+        </>
+      )}
 
-        {tab === "persona" && (
-          <>
-            <Field label="Ton" htmlFor="tone" hint="Serbest yazabilirsiniz: “alaycı ama yardımsever”, “küfürlü vergi danışmanı”…">
-              <input id="tone" className="field" value={config.persona.tone} onChange={(e) => set((d) => void (d.persona.tone = e.target.value))} />
-              <div className="mt-2 flex flex-wrap gap-1.5">
-                {TONES.map((t) => (
-                  <button
-                    key={t}
-                    type="button"
-                    onClick={() => set((d) => void (d.persona.tone = t))}
-                    className={`rounded-full border px-2.5 py-0.5 text-[13px] ${config.persona.tone === t ? "border-ink bg-ink text-sheet" : "border-rule text-graphite hover:border-ink hover:text-ink"}`}
-                  >
-                    {t}
-                  </button>
-                ))}
-              </div>
-            </Field>
-            <Field label="Dil" htmlFor="lang" hint="Kullanıcı başka dilde konuşursa agent onun diline geçer.">
-              <select id="lang" className="field" value={config.persona.language} onChange={(e) => set((d) => void (d.persona.language = e.target.value))}>
-                {LANGS.map(([v, l]) => (
-                  <option key={v} value={v}>
-                    {l}
-                  </option>
-                ))}
-              </select>
-            </Field>
-            <Field label="Üslup notları" htmlFor="style">
-              <textarea id="style" rows={4} className="field" value={config.persona.style_notes} onChange={(e) => set((d) => void (d.persona.style_notes = e.target.value))} />
-            </Field>
-            <Field label="Cevap uzunluğu" htmlFor="maxs" hint="Kısa cevaplar seste daha doğal duyulur ve gecikmeyi azaltır.">
-              <div className="flex items-center gap-3">
-                <input
-                  id="maxs"
-                  type="range"
-                  min={1}
-                  max={6}
-                  value={config.limits.max_reply_sentences}
-                  onChange={(e) => set((d) => void (d.limits.max_reply_sentences = Number(e.target.value)))}
-                  className="flex-1 accent-[var(--needle)]"
-                />
-                <span className="w-20 text-[14px] text-ink">en fazla {config.limits.max_reply_sentences} cümle</span>
-              </div>
-            </Field>
-          </>
-        )}
-
-        {tab === "knowledge" && (
-          <Field label="Bilgi metni" htmlFor="kb" hint="SSS, fiyat listesi, politika… Agent yalnızca buradaki ve şirket alanlarındaki bilgilere dayanır.">
-            <textarea id="kb" rows={16} className="field font-[450]" value={config.knowledge} onChange={(e) => set((d) => void (d.knowledge = e.target.value))} />
-            <label className="btn-quiet mt-2 cursor-pointer text-[14px]">
-              Metin dosyası yükle (.txt, .md)
+      {section === "knowledge" && (
+        <Group
+          title="Bilgi metni"
+          foot={`SSS, fiyat listesi, politika… ${config.knowledge.length.toLocaleString("tr-TR")} / 30.000 karakter.`}
+          action={
+            <label className="cursor-pointer text-[13px] font-medium text-needle-ink hover:underline">
+              Dosyadan ekle
               <input
                 type="file"
                 accept=".txt,.md,.csv,text/plain"
@@ -150,77 +119,115 @@ export function DefinitionPanel({
                 }}
               />
             </label>
-            <p className="hint">{config.knowledge.length.toLocaleString("tr-TR")} / 30.000 karakter</p>
-          </Field>
-        )}
+          }
+        >
+          <TextRow id="kb" rows={18} value={config.knowledge} onChange={(v) => set((d) => void (d.knowledge = v))} placeholder="Agent'ın bilmesi gereken her şeyi buraya yapıştırın." />
+        </Group>
+      )}
 
-        {tab === "actions" && <ActionsPreview config={config} />}
+      {section === "actions" && (
+        <Group title="Tanımlı işlemler" foot="İşlem düzenleyici ve simülatör sıradaki adımda geliyor. Şimdilik şablondaki işlem tanımları kaydedilir ama agent görüşmede bunları çağırmaz.">
+          {config.actions.length === 0 && <p className="row text-secondary">Bu agent için tanımlı işlem yok.</p>}
+          {config.actions.map((a) => (
+            <div key={a.name} className="px-4 py-3">
+              <div className="flex items-baseline justify-between gap-3">
+                <code className="font-mono text-[13.5px] font-medium">{a.name}</code>
+                <span className="text-[12px] text-secondary">
+                  {a.response_mode}
+                  {a.requires_confirmation ? ", onay ister" : ""}
+                </span>
+              </div>
+              <p className="mt-0.5 text-[14px] text-secondary">{a.description}</p>
+              {a.params.length > 0 && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {a.params.map((p) => (
+                    <span key={p.name} className="rounded-[5px] bg-fill px-1.5 py-0.5 font-mono text-[11.5px] text-secondary">
+                      {p.name}
+                      {p.required ? "" : "?"}: {p.type}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </Group>
+      )}
 
-        {tab === "models" && <ModelsTab config={config} set={set} providers={providers} />}
+      {section === "models" &&
+        (providers ? (
+          <div>
+            <p className="group-title">Ses kombinasyonu</p>
+            <ModelPicker idPrefix="def" value={config.providers} providers={providers} onChange={(v) => set((d) => void (d.providers = v))} />
+            <p className="group-foot">
+              {providers.voice
+                ? "Pipeline modunda her katmanı ayrı seçersiniz ve gecikme katman katman ölçülür. Realtime modunda tek model hem dinler hem konuşur; genelde daha hızlıdır, kontrolü daha azdır."
+                : "Sesli mod için sunucuda LiveKit ayarları eksik. Modeller seçilebilir ama görüşme başlatılamaz."}
+            </p>
+          </div>
+        ) : (
+          <p className="text-secondary">Sağlayıcılar yükleniyor…</p>
+        ))}
 
-        {tab === "advanced" && <AdvancedTab config={config} onChange={onChange} />}
+      {section === "advanced" && <AdvancedSection config={config} onChange={onChange} />}
+    </div>
+  );
+}
+
+export function Group({ title, foot, action, children }: { title?: string; foot?: React.ReactNode; action?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section>
+      {(title || action) && (
+        <div className="mb-1.5 flex items-baseline justify-between px-4">
+          {title && <h3 className="text-[13px] font-medium text-secondary">{title}</h3>}
+          {action}
+        </div>
+      )}
+      <div className="group-list">{children}</div>
+      {foot && <p className="group-foot">{foot}</p>}
+    </section>
+  );
+}
+
+function InputRow({ id, label, value, onChange, placeholder }: { id: string; label: string; value: string; onChange: (v: string) => void; placeholder?: string }) {
+  return (
+    <label htmlFor={id} className="row cursor-text">
+      <span className="label w-28 shrink-0 sm:w-32">{label}</span>
+      <input id={id} className="field-bare text-right text-secondary focus:text-label" value={value} placeholder={placeholder} onChange={(e) => onChange(e.target.value)} />
+    </label>
+  );
+}
+
+function TextRow({ id, label, value, onChange, rows, placeholder }: { id: string; label?: string; value: string; onChange: (v: string) => void; rows: number; placeholder?: string }) {
+  return (
+    <div className="px-4 py-2.5">
+      {label && (
+        <label htmlFor={id} className="mb-1 block text-[13px] text-secondary">
+          {label}
+        </label>
+      )}
+      <textarea id={id} rows={rows} className="field-bare resize-y" value={value} placeholder={placeholder} aria-label={label} onChange={(e) => onChange(e.target.value)} />
+    </div>
+  );
+}
+
+function Stepper({ value, min, max, onChange, format }: { value: number; min: number; max: number; onChange: (n: number) => void; format: (n: number) => string }) {
+  return (
+    <div className="flex items-center gap-3">
+      <span className="text-[15px] tabular-nums text-secondary">{format(value)}</span>
+      <div className="flex overflow-hidden rounded-[7px] bg-fill">
+        <button type="button" aria-label="Azalt" disabled={value <= min} onClick={() => onChange(value - 1)} className="px-3 py-1 text-[17px] leading-none disabled:opacity-30">
+          −
+        </button>
+        <span className="my-1.5 w-px bg-separator" />
+        <button type="button" aria-label="Artır" disabled={value >= max} onClick={() => onChange(value + 1)} className="px-3 py-1 text-[17px] leading-none disabled:opacity-30">
+          +
+        </button>
       </div>
     </div>
   );
 }
 
-function Field({ label, htmlFor, hint, children }: { label: string; htmlFor: string; hint?: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <label className="label" htmlFor={htmlFor}>
-        {label}
-      </label>
-      {children}
-      {hint && <p className="hint">{hint}</p>}
-    </div>
-  );
-}
-
-function ActionsPreview({ config }: { config: AgentConfig }) {
-  return (
-    <div className="space-y-4">
-      <p className="rounded-[var(--radius-field)] border border-needle/50 bg-needle-soft/60 px-3 py-2 text-[14px] leading-6">
-        İşlem düzenleyici ve simülatör sonraki adımda geliyor. Şimdilik şablondaki işlem tanımları kaydedilir ama agent görüşmede bunları çağırmaz.
-      </p>
-      {config.actions.length === 0 && <p className="text-[14px] text-graphite">Bu agent için tanımlı işlem yok.</p>}
-      <ul className="divide-y divide-rule rounded-[var(--radius-panel)] border border-rule bg-white">
-        {config.actions.map((a) => (
-          <li key={a.name} className="px-3 py-2.5">
-            <div className="flex items-baseline justify-between gap-2">
-              <code className="font-mono text-[13px] text-ink">{a.name}</code>
-              <span className="text-[12px] text-graphite">{a.response_mode}{a.requires_confirmation ? ", onay ister" : ""}</span>
-            </div>
-            <p className="mt-0.5 text-[14px] text-graphite">{a.description}</p>
-            {a.params.length > 0 && (
-              <p className="mt-1 font-mono text-[12px] text-graphite">
-                {a.params.map((p) => `${p.name}${p.required ? "" : "?"}: ${p.type}`).join(", ")}
-              </p>
-            )}
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function ModelsTab({ config, set, providers }: { config: AgentConfig; set: (fn: (d: AgentConfig) => void) => void; providers: ProviderAvailability | null }) {
-  if (!providers) return <p className="text-[14px] text-graphite">Sağlayıcılar yükleniyor…</p>;
-  return (
-    <div className="space-y-4">
-      {!providers.voice && (
-        <p className="rounded-[var(--radius-field)] border border-needle/50 bg-needle-soft/60 px-3 py-2 text-[14px] leading-6">
-          Sesli mod için sunucuda LiveKit ayarları eksik. Modeller seçilebilir ama görüşme başlatılamaz.
-        </p>
-      )}
-      <ModelPicker idPrefix="def" value={config.providers} providers={providers} onChange={(v) => set((d) => void (d.providers = v))} />
-      <p className="hint">
-        Pipeline modunda her katmanı ayrı seçersiniz ve gecikme katman katman ölçülür. Realtime modunda tek model hem dinler hem konuşur; genelde daha hızlıdır, kontrol daha azdır.
-      </p>
-    </div>
-  );
-}
-
-function AdvancedTab({ config, onChange }: { config: AgentConfig; onChange: (c: AgentConfig) => void }) {
+function AdvancedSection({ config, onChange }: { config: AgentConfig; onChange: (c: AgentConfig) => void }) {
   const generated = useMemo(() => buildPersonaPrompt(config), [config]);
   const full = useMemo(() => buildSystemPrompt(config), [config]);
   const [raw, setRaw] = useState(() => JSON.stringify(config, null, 2));
@@ -228,44 +235,30 @@ function AdvancedTab({ config, onChange }: { config: AgentConfig; onChange: (c: 
   const overriding = config.prompt_override !== undefined;
 
   return (
-    <div className="space-y-6">
-      <div>
-        <div className="mb-1.5 flex items-center justify-between">
-          <span className="label mb-0">Sistem prompt'u</span>
-          <label className="flex items-center gap-2 text-[13px] text-graphite">
-            <input
-              type="checkbox"
-              checked={overriding}
-              onChange={(e) => onChange({ ...config, prompt_override: e.target.checked ? generated : undefined })}
-              className="accent-[var(--ink)]"
-            />
+    <>
+      <Group title="Sistem prompt'u" foot="En baştaki güvenlik kuralları her zaman eklenir ve düzenlenemez. Elle düzenleme yalnızca altındaki kısmı değiştirir.">
+        <div className="row">
+          <label htmlFor="override" className="label flex-1">
             Elle düzenle
           </label>
+          <Switch id="override" label="Prompt'u elle düzenle" checked={overriding} onChange={(v) => onChange({ ...config, prompt_override: v ? generated : undefined })} />
         </div>
         {overriding ? (
-          <textarea rows={14} className="field font-mono text-[13px]" value={config.prompt_override} onChange={(e) => onChange({ ...config, prompt_override: e.target.value })} />
+          <div className="px-4 py-2.5">
+            <textarea rows={14} aria-label="Prompt" className="field-bare resize-y font-mono text-[12.5px] leading-5" value={config.prompt_override} onChange={(e) => onChange({ ...config, prompt_override: e.target.value })} />
+          </div>
         ) : (
-          <pre className="max-h-80 overflow-auto whitespace-pre-wrap rounded-[var(--radius-field)] border border-rule bg-white p-3 font-mono text-[12.5px] leading-5 text-ink">{full}</pre>
+          <pre className="max-h-80 overflow-auto whitespace-pre-wrap px-4 py-3 font-mono text-[12px] leading-5 text-secondary">{full}</pre>
         )}
-        <p className="hint">En baştaki güvenlik kuralları her zaman eklenir ve düzenlenemez. Elle düzenleme yalnızca altındaki kısmı değiştirir.</p>
-      </div>
+      </Group>
 
-      <div>
-        <label className="label" htmlFor="raw">
-          Ham JSON
-        </label>
-        <textarea
-          id="raw"
-          rows={14}
-          className="field font-mono text-[12.5px]"
-          value={raw}
-          onChange={(e) => setRaw(e.target.value)}
-          onFocus={() => setRaw(JSON.stringify(config, null, 2))}
-        />
-        <div className="mt-2 flex items-center gap-3">
+      <Group
+        title="Ham JSON"
+        foot={rawError ? <span className="text-end">{rawError}</span> : "Tanımın tamamı. Uygulamadan önce doğrulanır."}
+        action={
           <button
             type="button"
-            className="btn-quiet text-[14px]"
+            className="text-[13px] font-medium text-needle-ink hover:underline"
             onClick={() => {
               try {
                 const parsed = agentConfigSchema.safeParse(JSON.parse(raw));
@@ -280,11 +273,21 @@ function AdvancedTab({ config, onChange }: { config: AgentConfig; onChange: (c: 
               }
             }}
           >
-            JSON'u uygula
+            Uygula
           </button>
-          {rawError && <span className="text-[13px] text-fault">{rawError}</span>}
+        }
+      >
+        <div className="px-4 py-2.5">
+          <textarea
+            rows={14}
+            aria-label="Ham JSON"
+            className="field-bare resize-y font-mono text-[12.5px] leading-5"
+            value={raw}
+            onChange={(e) => setRaw(e.target.value)}
+            onFocus={() => setRaw(JSON.stringify(config, null, 2))}
+          />
         </div>
-      </div>
-    </div>
+      </Group>
+    </>
   );
 }

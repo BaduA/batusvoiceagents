@@ -2,85 +2,102 @@
 
 import type { ProviderSelection } from "@vap/core";
 import type { ProviderAvailability } from "@/lib/providers";
+import { IconChevron } from "./ui/icons";
 
 type Opt = { id: string; label: string; available: boolean };
 
-function Select({ id, label, value, options, onChange, tone }: { id: string; label: string; value: string; options: Opt[]; onChange: (v: string) => void; tone: "light" | "dark" }) {
+/** Native popup-button style select inside a grouped row: label left, value right. */
+export function SelectRow({ id, label, value, options, onChange }: { id: string; label: string; value: string; options: Opt[]; onChange: (v: string) => void }) {
   return (
-    <div>
-      <label htmlFor={id} className={`mb-1 block text-[12px] ${tone === "dark" ? "text-console-text/75" : "text-graphite"}`}>
-        {label}
-      </label>
-      <select
-        id={id}
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className={`w-full rounded-[var(--radius-field)] border px-2 py-1.5 text-[14px] ${tone === "dark" ? "border-console-line bg-[#26343f] text-white" : "border-rule bg-white text-ink"}`}
-      >
-        {options.map((o) => (
-          <option key={o.id} value={o.id} disabled={!o.available}>
-            {o.label}
-            {o.available ? "" : " (yapılandırılmamış)"}
-          </option>
-        ))}
-      </select>
+    <label htmlFor={id} className="row cursor-pointer">
+      <span className="label shrink-0 whitespace-nowrap">{label}</span>
+      <span className="relative ml-auto flex min-w-0 items-center gap-1 text-[15px] text-secondary">
+        <select
+          id={id}
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className="w-full min-w-0 max-w-[13rem] cursor-pointer appearance-none truncate bg-transparent pr-4 text-right text-secondary outline-none"
+        >
+          {options.map((o) => (
+            <option key={o.id} value={o.id} disabled={!o.available}>
+              {o.label}
+              {o.available ? "" : " (yapılandırılmamış)"}
+            </option>
+          ))}
+        </select>
+        <IconChevron size={13} className="pointer-events-none absolute right-0 rotate-90 text-tertiary" />
+      </span>
+    </label>
+  );
+}
+
+export function Segmented<T extends string>({ value, options, onChange, label }: { value: T; options: [T, string][]; onChange: (v: T) => void; label: string }) {
+  return (
+    <div role="radiogroup" aria-label={label} className="grid auto-cols-fr grid-flow-col gap-0.5 rounded-[9px] bg-fill p-0.5">
+      {options.map(([v, l]) => (
+        <button
+          key={v}
+          type="button"
+          role="radio"
+          aria-checked={value === v}
+          onClick={() => onChange(v)}
+          className={`rounded-[7px] px-3 py-1 text-[13px] font-medium transition-colors ${
+            value === v ? "bg-surface text-label shadow-[0_1px_3px_rgb(0_0_0/0.12),0_0_0_0.5px_rgb(0_0_0/0.04)]" : "text-secondary hover:text-label"
+          }`}
+        >
+          {l}
+        </button>
+      ))}
     </div>
   );
 }
 
-/** Mode + STT/LLM/TTS/voice (pipeline) or realtime model. Disabled options have no key / inference. */
+/** Mode + STT/LLM/TTS/voice (pipeline) or realtime model, as an inset grouped list. */
 export function ModelPicker({
   value,
   onChange,
   providers,
-  tone = "light",
   idPrefix,
+  compact = false,
 }: {
   value: ProviderSelection;
   onChange: (v: ProviderSelection) => void;
   providers: ProviderAvailability;
-  tone?: "light" | "dark";
   idPrefix: string;
+  /** Short labels for narrow places like the inspector. */
+  compact?: boolean;
 }) {
+  const L = compact
+    ? { pipeline: "Pipeline", stt: "STT", llm: "LLM", tts: "TTS", voice: "Ses", rt: "Model" }
+    : { pipeline: "STT → LLM → TTS", stt: "Yazıya çevirme", llm: "Dil modeli", tts: "Seslendirme", voice: "Ses", rt: "Realtime model" };
   const set = (patch: Partial<ProviderSelection>) => onChange({ ...value, ...patch });
   const tts = providers.tts.find((t) => t.id === value.tts);
   const voices = tts?.voices ?? [];
   const voice = voices.some((v) => v.id === value.voice) ? value.voice : (voices[0]?.id ?? "");
-  const base = tone === "dark" ? "text-console-text" : "text-ink";
 
   return (
-    <div className={`space-y-3 ${base}`}>
-      <div role="radiogroup" aria-label="Ses modu" className={`grid grid-cols-2 gap-1 rounded-[var(--radius-field)] p-1 ${tone === "dark" ? "bg-[#26343f]" : "bg-desk"}`}>
-        {(
-          [
-            ["pipeline", "STT → LLM → TTS"],
-            ["realtime", "Realtime"],
-          ] as const
-        ).map(([m, l]) => (
-          <button
-            key={m}
-            type="button"
-            role="radio"
-            aria-checked={value.mode === m}
-            onClick={() => set({ mode: m })}
-            className={`rounded-[5px] px-2 py-1.5 text-[13px] font-medium ${
-              value.mode === m ? (tone === "dark" ? "bg-console-text text-console" : "bg-white text-ink shadow-sm") : tone === "dark" ? "text-console-text/80" : "text-graphite"
-            }`}
-          >
-            {l}
-          </button>
-        ))}
+    <div className="space-y-3">
+      <Segmented
+        label="Ses modu"
+        value={value.mode}
+        onChange={(m) => set({ mode: m })}
+        options={[
+          ["pipeline", L.pipeline],
+          ["realtime", "Realtime"],
+        ]}
+      />
+      <div className="group-list">
+        {value.mode === "pipeline" ? (
+          <>
+            <SelectRow id={`${idPrefix}-stt`} label={L.stt} value={value.stt} options={providers.stt} onChange={(v) => set({ stt: v })} />
+            <SelectRow id={`${idPrefix}-llm`} label={L.llm} value={value.llm} options={providers.llm} onChange={(v) => set({ llm: v })} />
+            <SelectRow id={`${idPrefix}-tts`} label={L.tts} value={value.tts} options={providers.tts} onChange={(v) => set({ tts: v, voice: "" })} />
+            <SelectRow id={`${idPrefix}-voice`} label={L.voice} value={voice} options={voices.map((v) => ({ ...v, available: true }))} onChange={(v) => set({ voice: v })} />
+          </>
+        ) : (
+          <SelectRow id={`${idPrefix}-rt`} label={L.rt} value={value.realtime} options={providers.realtime} onChange={(v) => set({ realtime: v })} />
+        )}
       </div>
-      {value.mode === "pipeline" ? (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-          <Select id={`${idPrefix}-stt`} tone={tone} label="Konuşmayı yazıya çevirme (STT)" value={value.stt} options={providers.stt} onChange={(v) => set({ stt: v })} />
-          <Select id={`${idPrefix}-llm`} tone={tone} label="Dil modeli (LLM)" value={value.llm} options={providers.llm} onChange={(v) => set({ llm: v })} />
-          <Select id={`${idPrefix}-tts`} tone={tone} label="Seslendirme (TTS)" value={value.tts} options={providers.tts} onChange={(v) => set({ tts: v, voice: "" })} />
-          <Select id={`${idPrefix}-voice`} tone={tone} label="Ses" value={voice} options={voices.map((v) => ({ ...v, available: true }))} onChange={(v) => set({ voice: v })} />
-        </div>
-      ) : (
-        <Select id={`${idPrefix}-rt`} tone={tone} label="Realtime model (speech-to-speech)" value={value.realtime} options={providers.realtime} onChange={(v) => set({ realtime: v })} />
-      )}
     </div>
   );
 }
